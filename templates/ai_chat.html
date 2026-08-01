@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduGenie AI</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/edugenie_ai_favicon.png') }}" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+
+<body>
+
+  <div class="lamp-glow" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" width="40px">
+      <div class="brand-text">
+        <h1>EduGenie</h1>
+        <p>Your personal AI Study Assistant</p>
+      </div>
+    </div>
+    <button class="reset-btn" id="resetBtn" title="Start a new conversation">New chat</button>
+  </header>
+
+  <main class="chat-shell">
+    <div class="messages" id="messages">
+      <div class="msg bot">
+        <div class="greet">
+          <h1>Hey, Welcome Back!</h1>
+        </div>
+      </div>
+    </div>
+
+    <form class="composer" id="composer" autocomplete="off">
+      <input type="text" id="userInput" placeholder="Ask EduGenie anything..." aria-label="Message" required />
+      <button type="submit" id="sendBtn" aria-label="Send message">
+        <svg viewBox="0 0 24 24" width="50" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12L20 4L13 20L11 13L4 12Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </form>
+  </main>
+
+  <!-- marked: renders markdown (bold, bullet points, numbered lists, etc.) to HTML -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <!-- DOMPurify: sanitizes the HTML produced by marked before it's inserted into the page -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>

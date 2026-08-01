@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie | Quiz Generator</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/quiz_logo.png') }}" type="image/png">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body class="quiz-generator-page">
+
+    <!-- Background Glow -->
+
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
+
+    <div class="container">
+
+        <!-- ================= HEADER ================= -->
+
+        <header>
+
+            <div class="logo">
+
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" width="40px">
+
+                <div>
+
+                    <h2>EduGenie</h2>
+                    <p>AI Study Assistant</p>
+
+                </div>
+
+            </div>
+
+
+            <nav>
+
+                <a href="#">
+                    <i class="fa-regular fa-file-lines"></i>
+                    Explain
+                </a>
+
+                <a href="/code-generator">
+                    <i class="fa-solid fa-code"></i>
+                    Code
+                </a>
+
+                <a href="#">
+                    <i class="fa-regular fa-note-sticky"></i>
+                    Notes
+                </a>
+
+                <a href="#" class="active">
+                    <i class="fa-solid fa-list-check"></i>
+                    Quiz
+                </a>
+
+                <a href="#">
+                    <i class="fa-regular fa-file-pdf"></i>
+                    PDF Chat
+                </a>
+
+                <a href="#">
+                    <i class="fa-solid fa-table-cells-large"></i>
+                    More
+                </a>
+
+            </nav>
+
+
+
+            <div class="header-icons">
+
+                <button>
+
+                    <i class="fa-regular fa-sun"></i>
+
+                </button>
+
+                <button>
+
+                    <i class="fa-solid fa-user"></i>
+
+                </button>
+
+            </div>
+
+        </header>
+
+
+
+
+
+        <!-- ================= HERO ================= -->
+
+        <section class="hero">
+
+            <div class="hero-left">
+
+                <div class="title-icon">
+
+                    <i class="fa-solid fa-circle-question"></i>
+
+                </div>
+
+                <div>
+
+                    <h1>
+
+                        Quiz Generator
+
+                    </h1>
+
+                    <p>
+
+                        Create a short quiz with open-ended questions on any topic.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="hero-right">
+
+                <img src="{{ url_for('static', filename='images/bot.png') }}" alt="logo">
+
+            </div>
+
+        </section>
+
+
+
+
+
+
+        <!-- ================= CONTENT ================= -->
+
+        <section class="content">
+
+            <!-- LEFT -->
+
+            <div class="quiz-form">
+
+
+                <h2>
+
+                    ✨ Generate Quiz
+
+                </h2>
+
+
+
+                <label>
+
+                    Topic
+
+                </label>
+
+                <input
+                    id="topic-input"
+                    type="text"
+                    placeholder="E.g : Operating System">
+
+
+
+                <div class="row">
+
+                    <div>
+
+                        <label>
+
+                            Difficulty
+
+                        </label>
+
+                        <select id="difficulty-select">
+
+                            <option>Easy</option>
+                            <option selected>Medium</option>
+                            <option>Hard</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <label>
+
+                            Number of Questions
+
+                        </label>
+
+                        <select id="num-questions-select">
+
+                            <option>5</option>
+                            <option>10</option>
+                            <option>15</option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="info-box">
+
+                    <i class="fa-solid fa-circle-info"></i>
+
+                    <span>
+
+                        Questions are multiple-choice. Select an answer to check if it's correct.
+
+                    </span>
+
+                </div>
+
+
+
+                <button class="generate-btn" id="generate-btn">
+
+                    ✨ Generate Quiz
+
+                </button>
+
+            </div>
+
+
+
+
+
+            <!-- RIGHT -->
+
+            <div class="preview">
+
+                <div class="preview-header">
+
+                    <h2>
+
+                        <i class="fa-solid fa-list"></i>
+
+                        Quiz Preview
+
+                    </h2>
+
+                    <span id="question-count-label">
+
+                        Question 1 of 5
+
+                    </span>
+
+                    <span id="score-label" class="score-badge">
+
+                        Score: 0/5
+
+                    </span>
+
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+
+                <div id="questions-container">
+
+                </div>
+
+                <button class="next-btn" id="next-btn" disabled>
+
+                    Next Question
+
+                </button>
+
+
+
+                <div class="buttons">
+
+                    <button class="copy" id="copy-btn">
+
+                        <i class="fa-regular fa-copy"></i>
+
+                        Copy Quiz
+
+                    </button>
+
+                    <button class="download" id="download-btn">
+
+                        <i class="fa-solid fa-download"></i>
+
+                        Download Quiz
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================= FOOTER ================= -->
+
+        <footer>
+
+            <i class="fa-regular fa-lightbulb"></i>
+
+            Tip: These are open-ended questions. Encourage detailed and conceptual answers.
+
+        </footer>
+
+    </div>
+
+    <script src="/static/script.js"></script>
+
+</body>
+
+</html>

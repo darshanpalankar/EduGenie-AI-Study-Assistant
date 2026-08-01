@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie | AI Study Assistant</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}" type="image/png">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body class="home-page">
+
+    <!-- ========================= -->
+    <!-- Header -->
+    <!-- ========================= -->
+
+    <header class="header">
+
+        <div class="container nav-container">
+
+            <!-- Logo -->
+
+            <a href="/" class="logo">
+
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EduGenie Logo">
+
+                <span>Edu<span class="blue">Genie</span></span>
+
+            </a>
+
+            <!-- Navigation -->
+
+            <nav class="navbar">
+
+                <a href="/" class="active">Home</a>
+
+                <a href="#features">Features</a>
+
+                <a href="#features">About</a>
+
+            </nav>
+
+            <!-- Button -->
+
+            <a href="#features" class="btn primary-btn">
+                Get Started
+            </a>
+
+            <!-- Mobile Menu -->
+
+            <div class="menu-btn">
+                <i class="ri-menu-3-line"></i>
+            </div>
+
+        </div>
+
+    </header>
+
+    <!-- ========================= -->
+    <!-- Hero Section -->
+    <!-- ========================= -->
+
+    <section class="hero">
+
+        <div class="container hero-container">
+
+            <!-- Left -->
+
+            <div class="hero-content">
+
+                <span class="badge">
+                    🚀 AI Powered Learning
+                </span>
+
+                <h1>
+
+                    Your AI Study Assistant
+
+                    <br>
+
+                    For
+
+                    <span>Smarter Learning</span>
+
+                </h1>
+
+                <p>
+
+                    EduGenie helps students learn faster, generate notes,
+                    solve coding problems, practice quizzes,
+                    and understand concepts with Artificial Intelligence.
+
+                </p>
+
+                <div class="hero-buttons">
+
+                    <a href="#features" class="btn primary-btn">
+
+                        Start Learning
+
+                        <i class="ri-arrow-right-line"></i>
+
+                    </a>
+
+                    <a href="#features" class="btn secondary-btn">
+
+                        Explore Features
+
+                    </a>
+
+                </div>
+
+                <!-- Stats -->
+
+                <div class="hero-stats">
+
+                    <div class="stat">
+                        <h2>4+</h2>
+                        <span>AI Tools</span>
+                    </div>
+
+                    <div class="stat">
+                        <h2>Instant</h2>
+                        <span>Results</span>
+                    </div>
+
+                    <div class="stat">
+                        <h2>100%</h2>
+                        <span>Secure</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Right -->
+
+            <div class="hero-image">
+
+                <div class="circle"></div>
+
+                <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt="EduGenie Robot">
+
+                <!-- Floating Icons -->
+
+                <div class="floating chat">
+                    <i class="ri-message-3-line"></i>
+                </div>
+
+                <div class="floating code">
+                    <i class="ri-code-s-slash-line"></i>
+                </div>
+
+                <div class="floating note">
+                    <i class="ri-file-list-3-line"></i>
+                </div>
+
+                <div class="floating idea">
+                    <i class="ri-lightbulb-line"></i>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ========================= -->
+    <!-- Features -->
+    <!-- ========================= -->
+
+    <section class="features" id="features">
+
+        <div class="container">
+
+            <span class="section-tag">
+
+                FEATURES
+
+            </span>
+
+            <h2>
+
+                Everything You Need
+
+                <span>To Study Smarter</span>
+
+            </h2>
+
+            <p class="section-text">
+
+                Powerful AI tools designed for students,
+                programmers, and lifelong learners.
+
+            </p>
+
+            <div class="feature-grid">
+
+                <!-- Card 1: AI Chat -->
+
+                <a href="/ai-chat" target="_blank" class="feature-card">
+
+                    <div class="icon">
+
+                        <i class="ri-message-3-line"></i>
+
+                    </div>
+
+                    <h3>AI Chat Assistant</h3>
+
+                    <p>
+
+                        Ask questions instantly and receive
+                        intelligent explanations anytime.
+
+                    </p>
+
+                </a>
+
+                <!-- Card 2: Code Generator -->
+
+                <a href="/code-generator" target="_blank" class="feature-card">
+
+                    <div class="icon">
+
+                        <i class="ri-code-box-line"></i>
+
+                    </div>
+
+                    <h3>Code Generator</h3>
+
+                    <p>
+
+                        Generate clean code in multiple
+                        programming languages.
+
+                    </p>
+
+                </a>
+
+                <!-- Card 3: Notes Generator -->
+
+                <a href="#" class="feature-card">
+
+                    <div class="icon">
+
+                        <i class="ri-file-text-line"></i>
+
+                    </div>
+
+                    <h3>Note Generator</h3>
+
+                    <p>
+
+                        Generate well-structured notes
+                        from any topic within seconds.
+
+                    </p>
+
+                </a>
+
+                <!-- Card 4: Quiz Generator -->
+
+                <a href="#" class="feature-card">
+
+                    <div class="icon">
+
+                        <i class="ri-question-answer-line"></i>
+
+                    </div>
+
+                    <h3>Quiz Generator</h3>
+
+                    <p>
+
+                        Create AI-powered quizzes
+                        to improve your knowledge.
+
+                    </p>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ========================= -->
+    <!-- Footer -->
+    <!-- ========================= -->
+
+    <footer class="footer">
+
+
+        <div class="container">
+            <p>
+                © 2026 EduGenie - AI Study Assistant
+            </p>
+
+        </div>
+
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>

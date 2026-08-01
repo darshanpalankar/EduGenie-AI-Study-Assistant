@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduGenie - Code Generator</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/code_fevicon.png') }}" type="image/png">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="code-generator-page">
+
+    <div class="container">
+        <!-- ================= HEADER ================= -->
+        <div class="page-title">
+            <div class="title-icon">
+                <i class="fa-solid fa-code"></i>
+            </div>
+            <div>
+                <h1>EduGenie - Code Generator</h1>
+                <p>Generate code instantly for any programming task.</p>
+            </div>
+        </div>
+        <!-- ================= INPUT CARD ================= -->
+        <div class="card">
+            <div class="card-grid">
+
+                <!-- Prompt -->
+                <div class="field prompt">
+                    <label>Describe what you want to code</label>
+                    <textarea
+                        placeholder="E.g : Write a Python function to check whether a number is prime or not."></textarea>
+                    <span class="counter">71/500</span>
+                </div>
+                <!-- Language -->
+                <div class="field">
+                    <label>Language</label>
+                    <div class="dropdown" data-dropdown="language">
+                        <div class="select-box" data-value="Python">
+                            <div class="select-left">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg"
+                                    alt="Python">
+                                <span>Python</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <ul class="dropdown-menu">
+                            <li data-value="Python">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" alt="Python">
+                                <span>Python</span>
+                            </li>
+                            <li data-value="JavaScript">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" alt="JavaScript">
+                                <span>JavaScript</span>
+                            </li>
+                            <!-- <li data-value="HTML">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/html-original.svg" alt="HTML">
+                                <span>HTML</span>
+                            </li> -->
+                            <li data-value="Java">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" alt="Java">
+                                <span>Java</span>
+                            </li>
+                            <li data-value="C++">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" alt="C++">
+                                <span>C++</span>
+                            </li>
+                            <li data-value="Go">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg" alt="Go">
+                                <span>Go</span>
+                            </li>
+                            <li data-value="Rust">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-original.svg" alt="Rust">
+                                <span>Rust</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Difficulty (Optional)</label>
+                    <div class="dropdown" data-dropdown="difficulty">
+                        <div class="select-box" data-value="Beginner">
+                            <div class="select-left">
+                                <span class="dot dot-green"></span>
+                                <span>Beginner</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <ul class="dropdown-menu">
+                            <li data-value="Beginner">
+                                <span class="dot dot-green"></span>
+                                <span>Beginner</span>
+                            </li>
+                            <li data-value="Intermediate">
+                                <span class="dot dot-amber"></span>
+                                <span>Intermediate</span>
+                            </li>
+                            <li data-value="Advanced">
+                                <span class="dot dot-red"></span>
+                                <span>Advanced</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                <!-- Generate Button -->
+                <div class="button-area">
+                    <button class="generate-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        Generate Code
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+         <!-- ================= OUTPUT CARD ================= -->
+
+        <div class="card output-card">
+            <div class="output-header">
+                <h3>Generated Code</h3>
+                <div class="actions">
+                    <button>
+                        <i class="fa-regular fa-copy"></i>
+                        Copy
+                    </button>
+                    <button>
+                        <i class="fa-solid fa-download"></i>
+                        Download
+                    </button>
+                    <button>
+                        <i class="fa-solid fa-rotate-right"></i>
+                        Regenerate
+                    </button>
+                </div>
+            </div>
+
+            <div class="code-box">
+                <div class="language-tag">
+                    Python
+                </div>
+                <pre><code></code></pre>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
