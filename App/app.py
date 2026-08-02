@@ -191,13 +191,6 @@ class CodeGenerator:
 
         session_id = session["session_id"]
 
-        # SYSTEM_INSTRUCTION = (
-        #     "You are EduGenie Code Generator."
-        #     "Your task is to generate code only."
-        #     "If the user's prompt is not related to programming,"
-        #     "politely ask them to describe the programming problem instead of generating meaningless code."
-        # )
-
         if session_id not in _chats_:
             client = self.get_client()
             chat_obj = client.chats.create(
