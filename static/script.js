@@ -1,11 +1,16 @@
 /* ==========================================
-   Shared Helpers
+   Home Page (index.html)
 ========================================== */
 
-// Copies text to the clipboard. navigator.clipboard only exists in secure
-// contexts (HTTPS or localhost) - on a plain-HTTP LAN address (used for
-// mobile testing) it's undefined, so we fall back to the older
-// execCommand approach via a hidden textarea in that case.
+const homeMenuBtn = document.querySelector(".home-page .menu-btn");
+const homeNavbar = document.querySelector(".home-page .navbar");
+
+if (homeMenuBtn && homeNavbar) {
+  homeMenuBtn.addEventListener("click", () => {
+    homeNavbar.classList.toggle("active");
+  });
+}
+
 const copyToClipboard = async (text) => {
   if (navigator.clipboard && window.isSecureContext) {
     await navigator.clipboard.writeText(text);
@@ -37,11 +42,6 @@ const sendBtn = document.getElementById("sendBtn");
 const resetBtn = document.getElementById("resetBtn");
 
 if (messagesEl && composerEl && inputEl && sendBtn) {
-
-  // Configure marked so lists render "tight" (list items are not each
-  // wrapped in their own <p>), which keeps spacing compact instead of
-  // airy/loose. `breaks: true` also turns single newlines from Gemini
-  // into <br> instead of requiring a blank line for a new paragraph.
   if (window.marked) {
     marked.setOptions({ breaks: true, gfm: true });
   }
@@ -63,9 +63,6 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
-    // Bot replies may contain markdown (bold, bullet points, numbered
-    // lists) since the backend now allows formatting for chat responses.
-    // Render it as sanitized HTML. User messages stay as plain text.
     if (role === "bot" && window.marked && window.DOMPurify) {
       bubble.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
     } else {
@@ -100,7 +97,11 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     scrollToBottom();
   };
 
+  const greetMsg = document.getElementById("greetMsg");
+
   const sendMessage = async (text) => {
+    if (greetMsg) greetMsg.style.display = "none";
+
     addMessage("user", text);
     inputEl.value = "";
     sendBtn.disabled = true;
@@ -152,6 +153,13 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     });
   }
 
+  document.querySelectorAll(".suggestion-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const prompt = chip.dataset.prompt;
+      if (prompt) sendMessage(prompt);
+    });
+  });
+
   inputEl.focus();
 }
 
@@ -179,7 +187,6 @@ if (promptEl && generateBtn && codeBox) {
     Rust: "rs",
   };
 
-  // Dropdowns (Language / Difficulty)
   document.querySelectorAll(".dropdown").forEach((dropdown) => {
     const selectBox = dropdown.querySelector(".select-box");
     const menu = dropdown.querySelector(".dropdown-menu");
@@ -531,8 +538,6 @@ if (
     }
   });
 
-  // Converts the backend's { question, options, correct_answer } shape into
-  // the { question, options, correctIndex } shape the renderer expects.
   const normalizeQuestions = (rawQuestions) => {
     return (rawQuestions || []).map((q) => {
       const options = q.options || [];
@@ -635,17 +640,4 @@ if (
   downloadBtn.addEventListener("click", downloadQuiz);
 
   renderCurrentQuestion();
-}
-
-/* ==========================================
-   Home Page (index.html - New Design)
-========================================== */
-
-const homeMenuBtn = document.querySelector(".home-page .menu-btn");
-const homeNavbar = document.querySelector(".home-page .navbar");
-
-if (homeMenuBtn && homeNavbar) {
-  homeMenuBtn.addEventListener("click", () => {
-    homeNavbar.classList.toggle("active");
-  });
 }

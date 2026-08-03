@@ -12,9 +12,7 @@ from google import genai
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("edugenie")
 
-# Quiet the noisy request-level logs (Flask/Werkzeug per-request GET/POST lines,
-# httpx's "HTTP Request: POST ..." lines, and google_genai's AFC notices) while
-# keeping our own "edugenie" logger at INFO.
+
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("google_genai").setLevel(logging.WARNING)
@@ -32,7 +30,6 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 # answers (bold, bullet points, numbered lists) so the AI Chat page can
 # render nicely formatted responses. It's still told to output plain,
 # unformatted code when the user explicitly asks for code - that path
-# (Code Generator page) strips formatting anyway via clean_text().
 
 SYSTEM_INSTRUCTION = (
     "You are EduGenie - AI Study Assistant. "
@@ -65,11 +62,6 @@ def clean_text(text):
         .replace("*", "")
     )
 
-
-# Network-level failures that are usually transient (dropped connection,
-# SSL handshake interrupted mid-request, server closing the socket early).
-# Worth a short automatic retry, unlike a bad API key or a genuine error
-# response from Gemini.
 RETRYABLE_EXCEPTIONS = (
     httpx.ConnectError,
     httpx.RemoteProtocolError,
@@ -344,8 +336,7 @@ class MCQsGenerator:
             f"Number of questions: {num_questions}\n"
             "Generate the multiple-choice questions now."
         )
-        # MCQs carry 4 options per question on top of the question text
-        # itself, so give them a bit more headroom than the open-ended quiz.
+    
         config = {
             "system_instruction": self.SYSTEM_INSTRUCTION,
             "response_mime_type": "application/json",

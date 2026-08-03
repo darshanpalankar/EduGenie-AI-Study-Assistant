@@ -68,9 +68,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 20px clamp(16px, 5vw, 48px);
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
 }
 
 .brand {
@@ -101,13 +101,24 @@ body {
   }
 }
 
+.brand-logo {
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+}
+
 .brand-text h1 {
-  font-family: var(--display-font);
-  font-size: 22px;
+  font-family: 'Poppins', var(--body-font);
+  font-size: 24px;
   font-weight: 700;
   margin: 0;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   color: var(--ink);
+}
+
+.brand-genie {
+  color: var(--accent);
 }
 
 .brand-text p {
@@ -153,6 +164,63 @@ body {
   flex-direction: column;
   gap: 18px;
   padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-soft) transparent;
+}
+
+.messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: var(--gold-soft);
+  border-radius: 999px;
+}
+
+.greet {
+  padding: 32px 4px 8px;
+  text-align: center;
+  width: 100%;
+}
+
+.greet h1 {
+  font-family: var(--display-font);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.greet p {
+  font-size: 14.5px;
+  color: var(--ink-dim);
+  margin: 0 0 20px;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.suggestion-chip {
+  font-family: var(--body-font);
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.suggestion-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
 }
 
 .msg {
@@ -190,16 +258,15 @@ body {
 }
 
 .bubble {
+  font-family: 'Poppins', var(--body-font);
   padding: 12px 16px;
   border-radius: 16px;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.55;
   max-width: 78%;
   word-wrap: break-word;
 }
 
-/* User messages are plain text (set via textContent), so preserve any
-   manual line breaks the user typed. */
 .msg.user .bubble {
   white-space: pre-wrap;
 }
@@ -217,6 +284,12 @@ body {
   border-top-left-radius: 4px;
   color: var(--ink);
   box-shadow: 0 1px 2px rgba(38, 38, 31, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.msg.bot .bubble:hover {
+  box-shadow: 0 2px 10px rgba(38, 38, 31, 0.07);
+  border-color: rgba(38, 38, 31, 0.16);
 }
 
 .msg.user .bubble {
@@ -337,7 +410,7 @@ body {
   background: var(--panel);
   border: 1px solid var(--border);
   color: var(--ink);
-  font-family: var(--body-font);
+  font-family: 'Poppins', var(--body-font);
   font-size: 15px;
   padding: 13px 16px;
   border-radius: 999px;
@@ -394,6 +467,15 @@ body {
 
   .bubble {
     max-width: 86%;
+  }
+
+  .greet {
+    padding: 20px 4px 4px;
+  }
+
+  .suggestion-chip {
+    font-size: 12.5px;
+    padding: 8px 13px;
   }
 }
 

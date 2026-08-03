@@ -8,7 +8,7 @@
   <link rel="icon" href="{{ url_for('static', filename='images/edugenie_ai_favicon.png') }}" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
@@ -19,9 +19,9 @@
 
   <header class="app-header">
     <div class="brand">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" width="40px">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" class="brand-logo">
       <div class="brand-text">
-        <h1>EduGenie</h1>
+        <h1>Edu<span class="brand-genie">Genie</span></h1>
         <p>Your personal AI Study Assistant</p>
       </div>
     </div>
@@ -30,9 +30,15 @@
 
   <main class="chat-shell">
     <div class="messages" id="messages">
-      <div class="msg bot">
+      <div class="msg bot" id="greetMsg">
         <div class="greet">
           <h1>Hey, Welcome Back!</h1>
+          <p>Ask me anything - from tricky concepts to quick explanations.</p>
+          <div class="suggestions">
+            <button type="button" class="suggestion-chip" data-prompt="Explain API in simple terms">Explain API</button>
+            <button type="button" class="suggestion-chip" data-prompt="Give me 5 tips to study more effectively">Study tips</button>
+            <button type="button" class="suggestion-chip" data-prompt="What's the difference between a stack and a queue?">Stack vs queue</button>
+          </div>
         </div>
       </div>
     </div>
