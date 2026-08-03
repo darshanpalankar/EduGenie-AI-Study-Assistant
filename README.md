@@ -37,16 +37,19 @@ EDUGENIE - AI ASSISTANT/
 ├── App/
 │   ├── app.py
 │   └── chatbot.py
-├── Images/
-│   └── EduGenie - Logo.png
 │
 ├── Static/
+│   ├── Images/
+│   │   └── EduGenie - Logo.png
 │   ├── script.js
 │   └── style.css
 │
 └── Templates/
-    ├── home.html
-    └── index.html
+    ├── ai_chat.html
+    ├── code_generator.html
+    ├── index.html
+    ├── notes_generator.html
+    └── quiz_generator.html
 ```
 
 
