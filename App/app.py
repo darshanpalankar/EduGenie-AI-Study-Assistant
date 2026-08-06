@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import re
+import threading
 import time
 import uuid
 import socket
@@ -11,7 +13,6 @@ from google import genai
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("edugenie")
-
 
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -32,7 +33,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 # unformatted code when the user explicitly asks for code - that path
 
 SYSTEM_INSTRUCTION = (
-    "You are EduGenie - AI Study Assistant. "
+    "You are EduGenie - AI Study Assistant."
     "For normal conversational answers, feel free to use markdown formatting "
     "such as **bold**, bullet points (-), and numbered lists to make responses "
     "clear and easy to read. Keep lists tight: no blank line between list items. "
@@ -51,16 +52,19 @@ gemini_models = [
     ]
 
 _chats_ = {}
+_chats_lock = threading.Lock()
 
 
 def clean_text(text):
-    return (
-        (text or "")
-        .replace("```", "")
-        .replace("**", "")
-        .replace("`", "")
-        .replace("*", "")
-    )
+    """Strips an outer markdown code-fence wrapper (```lang ... ```) if the
+    model added one despite being told not to. Only touches the fence
+    markers themselves - it no longer blanket-removes every '*' and '`'
+    character, since that was corrupting real code (e.g. *args, **kwargs,
+    pointer syntax, multiplication, JS template literals)."""
+    text = (text or "").strip()
+    text = re.sub(r"^```[a-zA-Z0-9]*\n?", "", text)
+    text = re.sub(r"\n?```$", "", text)
+    return text.strip()
 
 RETRYABLE_EXCEPTIONS = (
     httpx.ConnectError,
@@ -127,11 +131,26 @@ def safe_int(value, default, min_value, max_value):
     return max(min_value, min(max_value, value))
 
 
+_genai_client = None
+_genai_client_lock = threading.Lock()
+
+
 def get_genai_client():
-    api_key = os.getenv("GENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GENAI_API_KEY environment variable not set.")
-    return genai.Client(api_key=api_key)
+    """Returns a single shared genai.Client, created once and reused across
+    every request. Building a new client per call (as this used to do for
+    Quiz/Notes/MCQs) adds avoidable setup overhead - and loses HTTP
+    keep-alive - on every single generation, which is part of why response
+    times could feel randomly slow. Lock guards against two concurrent
+    requests both racing to create it on first use."""
+    global _genai_client
+    if _genai_client is None:
+        with _genai_client_lock:
+            if _genai_client is None:
+                api_key = os.getenv("GENAI_API_KEY")
+                if not api_key:
+                    raise RuntimeError("GENAI_API_KEY environment variable not set.")
+                _genai_client = genai.Client(api_key=api_key)
+    return _genai_client
 
 
 def parse_json_response(raw_text):
@@ -184,13 +203,14 @@ class CodeGenerator:
         session_id = session["session_id"]
 
         if session_id not in _chats_:
-            client = self.get_client()
-            chat_obj = client.chats.create(
-                model="gemini-3.5-flash-lite",
-                config={"system_instruction": SYSTEM_INSTRUCTION},
-            )
-
-            _chats_[session_id] = {"client": client, "chat": chat_obj}
+            with _chats_lock:
+                if session_id not in _chats_:
+                    client = self.get_client()
+                    chat_obj = client.chats.create(
+                        model="gemini-3.6-flash",
+                        config={"system_instruction": SYSTEM_INSTRUCTION},
+                    )
+                    _chats_[session_id] = {"client": client, "chat": chat_obj}
 
         return _chats_[session_id]["chat"]
 
@@ -217,7 +237,7 @@ class CodeGenerator:
 class QuizzGenerator:
     """Generates a short, open-ended-answer quiz on a topic using Gemini."""
 
-    MODEL = "gemini-3.5-flash"
+    MODEL = "gemini-3.6-flash"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Quiz Generator. Given a topic, a difficulty level, "
@@ -272,7 +292,7 @@ class QuizzGenerator:
 class NotesGenerator:
     """Generates structured plain-text study notes on a topic using Gemini."""
 
-    MODEL = "gemini-3.5-flash"
+    MODEL = "gemini-3.6-flash"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Notes Generator. Given a topic and a detail level, "
@@ -308,7 +328,7 @@ class NotesGenerator:
 class MCQsGenerator:
     """Generates multiple-choice questions (with options + correct answer) using Gemini."""
 
-    MODEL = "gemini-3.5-flash"
+    MODEL = "gemini-3.6-flash"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's MCQ Generator. Given a topic, a difficulty level, "
@@ -394,7 +414,7 @@ def mcq_generator():
 
 
 @app.route("/quiz-generator")
-def quiz_generator():
+def quiz_generator_page():
     return render_template("quiz_generator.html")
 
 
@@ -493,4 +513,4 @@ if __name__ == "__main__":
     if lan_ip:
         print(f" * View on your phone (same Wi-Fi): http://{lan_ip}:{port}")
 
-    app.run(host="0.0.0.0", port=port, debug=debug)
+    app.run(host="0.0.0.0", port=port, debug=debug, threaded=True)
