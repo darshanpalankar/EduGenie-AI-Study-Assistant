@@ -113,11 +113,18 @@ cd EduGenie-AI-Study-Assistant
 
 ### 2. Create a virtual environment
 
-**Windows:**
+**Windows PowerShell:**
 
-```bash
+```powershell
 python -m venv venv
-venv\Scriptsctivate
+venv\Scripts\Activate.ps1
+```
+
+**Windows Command Prompt:**
+
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
 ```
 
 **macOS / Linux:**
