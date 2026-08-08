@@ -2,10 +2,9 @@
 
 <p align="center">
   <img 
-    src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/logo.png" 
+    src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/edugenie_logo.png" 
     width="280"
     alt="EduGenie Logo"
-    style="border-radius: 30px;
   >
 </p>
 
