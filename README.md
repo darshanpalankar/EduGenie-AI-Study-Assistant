@@ -1,97 +1,244 @@
-# EduGenie-AI-Study-Assistant 
+# EduGenie — AI Study Assistant
 
-EduGenie is an AI-powered study assistant that enables students to get instant answers to academic questions, resolve doubts efficiently, and generate concise, easy-to-understand study notes. Built with Flask and the Gemini API, it delivers an interactive, intelligent, and accessible learning experience. 🚀
-
-<p style="border-radius: 20px;" align="center">
-    <img src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/logo.png" width="300"/>
+<p align="center">
+  <img src="https://github.com/darshanpalkar/EduGenie-AI-Study-Assistant/blob/main/static/images/logo.png" width="280" alt="EduGenie Logo">
 </p>
 
-<p style="border-radius: 20px;" align="center">
-    <img src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/home_robot.png" width="300"/>
+<p align="center">
+  <strong>An AI-powered study assistant designed to make learning faster, simpler, and more interactive.</strong>
 </p>
 
-<p style="border-radius: 20px;" align="center">
-    <img src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/robot.png" width="300"/>
+<p align="center">
+  <a href="https://github.com/darshanpalkar/EduGenie-AI-Study-Assistant">
+    <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github" alt="GitHub Repository">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Flask-Backend-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
+  <img src="https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google" alt="Gemini AI">
+  <img src="https://img.shields.io/badge/Status-Active-2EA44F?style=for-the-badge" alt="Project Status">
 </p>
 
-<video autoplay muted loop width="500">
-    <source src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/Images/EduGenie_Testing.mp4" type="video/mp4">
-</video>
+---
 
-## Features
-- Ask academic questions and get AI-generated answers
-- Generate short and easy-to-understand notes
-- Simple and responsive user interface
-- Fast doubt-solving assistant
+## 📖 About
 
-## Tech Stack
-- Frontend: HTML, CSS, JavaScript
-- Backend: Python, Flask
-- AI Model: Gemini API
+**EduGenie** is an AI-powered study assistant built to help students understand academic topics, resolve doubts, generate concise study material, and interact with AI through a simple web interface.
+
+The application combines a **Flask backend**, a **HTML/CSS/JavaScript frontend**, and the **Google Gemini API** to provide an interactive learning experience.
+
+> **Project goal:** Make AI-assisted studying simple, accessible, and student-friendly.
+
+---
+
+## ✨ Features
+
+### 💬 AI Chat
+Ask academic questions and receive AI-generated explanations through an interactive chat interface.
+
+### 📝 Study Notes
+Generate concise, easy-to-understand study notes from academic topics.
+
+### 💻 Code Generator
+Generate programming code and explanations with the help of AI.
+
+### 🧠 Quiz Generator
+Create AI-generated quizzes to practice and test your understanding.
+
+### 🤖 Interactive Experience
+EduGenie includes a responsive interface and animated robot elements to make the learning experience more engaging.
+
+### 📱 Responsive UI
+The frontend is designed using HTML, CSS, and JavaScript with a focus on a clean and responsive user experience.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | HTML, CSS, JavaScript |
+| Backend | Python, Flask |
+| AI | Google Gemini API |
+| Development | VS Code |
+| Version Control | Git & GitHub |
+
+---
 
 ## 📂 Project Structure
 
 ```text
-EDUGENIE - AI ASSISTANT/
+EduGenie - AI Study Assistant/
 │
 ├── App/
-│   ├── app.py
-│   └── chatbot.py
+│   └── app.py
 │
-├── Static/
-│   ├── Images/
-│   │   └── EduGenie - Logo.png
-│   ├── script.js
-│   └── style.css
+├── static/
+│   ├── css/
+│   │   ├── base.css
+│   │   ├── chat.css
+│   │   ├── code-generator.css
+│   │   ├── home.css
+│   │   └── quiz-generator.css
+│   │
+│   ├── images/
+│   │   └── ai_robot_animated.webm
+│   │
+│   └── js/
+│       ├── base.js
+│       ├── chat.js
+│       ├── code-generator.js
+│       ├── home.js
+│       └── quiz-generator.js
 │
-└── Templates/
-    ├── ai_chat.html
-    ├── code_generator.html
-    ├── index.html
-    ├── notes_generator.html
-    └── quiz_generator.html
+├── templates/
+│   ├── ai_chat.html
+│   ├── code_generator.html
+│   ├── index.html
+│   └── quiz_generator.html
+│
+├── requirements.txt
+└── README.md
 ```
 
+---
 
-## Setup
+## ⚙️ Getting Started
 
-1. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+### 1. Clone the repository
 
-2. Set your Gemini API key as an environment variable:
-   ```
-   export GENAI_API_KEY="your-api-key-here"
-   ```
-   (On Windows: `set GENAI_API_KEY=your-api-key-here`)
+```bash
+git clone https://github.com/darshanpalkar/EduGenie-AI-Study-Assistant.git
+cd EduGenie-AI-Study-Assistant
+```
 
-3. (Optional) Set a Flask secret key for session security in production:
-   ```
-   export FLASK_SECRET_KEY="some-random-string"
-   ```
+### 2. Create a virtual environment
 
-4. Run the app:
-   ```
-   python app.py
-   ```
+**Windows:**
 
-5. Open your browser to `http://127.0.0.1:5000`.
+```bash
+python -m venv venv
+venv\Scriptsctivate
+```
 
-## Notes
+**macOS / Linux:**
 
-- Chat history is kept in memory per browser session and is tied to a single running server process. Restarting the server clears all conversations.
-- Click "New wish" to reset your conversation and start fresh.
-- For production deployment, use a proper WSGI server (e.g. gunicorn) and set `debug=False`.
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
+### 3. Install dependencies
 
-## Future Enhancements
-- Question history
-- User authentication
-- PDF note generation
-- Dark mode
-- Personalized study recommendations
+```bash
+pip install -r requirements.txt
+```
 
-## Author
-- Darshan Palankar
-- Priyesh Kondvilkar
+### 4. Configure the Gemini API key
+
+Create an API key through Google AI Studio and configure it as an environment variable.
+
+**Windows PowerShell:**
+
+```powershell
+$env:GENAI_API_KEY="your-api-key-here"
+```
+
+**Windows Command Prompt:**
+
+```cmd
+set GENAI_API_KEY=your-api-key-here
+```
+
+**macOS / Linux:**
+
+```bash
+export GENAI_API_KEY="your-api-key-here"
+```
+
+> **Security:** Never commit your API key, `.env` files containing secrets, or other credentials to GitHub.
+
+### 5. Run EduGenie
+
+```bash
+python App/app.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+---
+
+## 🔐 Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `GENAI_API_KEY` | Yes | API key used to access the Gemini API |
+| `FLASK_SECRET_KEY` | Optional | Secret key for Flask session/security configuration |
+
+For production use, configure secrets through your hosting platform or environment rather than hard-coding them in source code.
+
+---
+
+## 🧪 Development
+
+A typical development workflow is:
+
+```bash
+git status
+git add .
+git commit -m "Your commit message"
+git push origin main
+```
+
+Before committing, make sure sensitive credentials and local environment files are excluded from the repository.
+
+---
+
+## 🚀 Future Enhancements
+
+Planned improvements include:
+
+- [ ] Question and conversation history
+- [ ] User authentication
+- [ ] PDF-based note generation
+- [ ] Personalized study recommendations
+- [ ] Additional AI-powered learning tools
+- [ ] Further UI and accessibility improvements
+
+---
+
+## 🎯 Project Objectives
+
+EduGenie was developed with the following objectives:
+
+1. Provide students with quick access to AI-assisted academic support.
+2. Simplify complex topics through concise explanations.
+3. Make study material generation faster and easier.
+4. Provide interactive tools such as quizzes and code generation.
+5. Demonstrate the integration of AI APIs with a Flask web application.
+
+---
+
+## 👨‍💻 Authors
+
+**Darshan Palankar**  
+**Priyesh Kondvilkar**
+
+---
+
+## 📄 License
+
+This project is intended for educational and academic purposes.
+
+---
+
+## ⭐ Support
+
+If you find **EduGenie** useful, consider giving the repository a ⭐ on GitHub.
+
+<p align="center">
+  <strong>EduGenie — Learn Smarter. Study Better. 🚀</strong>
+</p>
