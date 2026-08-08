@@ -1,7 +1,7 @@
 # EduGenie — AI Study Assistant
 
 <p align="center">
-  <img src="https://github.com/darshanpalkar/EduGenie-AI-Study-Assistant/blob/main/static/images/logo.png" width="280" alt="EduGenie Logo">
+  <img src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/logo.png" width="280" alt="EduGenie Logo">
 </p>
 
 <p align="center">
