@@ -88,6 +88,23 @@ if (promptEl && generateBtn && codeBox) {
     codeBox.appendChild(pre);
   }
 
+  const lineNumbersEl = codeBox.querySelector(".line-numbers");
+
+  const renderLineNumbers = () => {
+    if (!lineNumbersEl) return;
+    const text = codeEl.textContent;
+    if (!text) {
+      lineNumbersEl.innerHTML = "";
+      return;
+    }
+    const lineCount = text.split("\n").length;
+    let html = "";
+    for (let i = 1; i <= lineCount; i++) {
+      html += `<span>${i}</span>`;
+    }
+    lineNumbersEl.innerHTML = html;
+  };
+
   let lastDescription = "";
 
   const generateCode = async () => {
@@ -105,6 +122,7 @@ if (promptEl && generateBtn && codeBox) {
     codeEl.className = "";
     delete codeEl.dataset.highlighted;
     codeEl.textContent = "Generating...";
+    renderLineNumbers();
     generateBtn.disabled = true;
 
     const instructions = [
@@ -125,13 +143,16 @@ if (promptEl && generateBtn && codeBox) {
 
       if (!res.ok) {
         codeEl.textContent = data.error || "Something went wrong. Please try again.";
+        renderLineNumbers();
         return;
       }
 
       codeEl.textContent = data.reply;
       highlightCode(language);
+      renderLineNumbers();
     } catch (err) {
       codeEl.textContent = "Could not reach EduGenie. Check your connection and try again.";
+      renderLineNumbers();
     } finally {
       generateBtn.disabled = false;
     }
