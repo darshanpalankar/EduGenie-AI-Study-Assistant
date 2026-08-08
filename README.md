@@ -1,4 +1,4 @@
-# EduGenie — AI Study Assistant
+# EduGenie - AI Study Assistant
 
 <p align="center">
   <img src="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant/blob/main/static/images/logo.png" width="280" alt="EduGenie Logo">
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/darshanpalkar/EduGenie-AI-Study-Assistant">
+  <a href="https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant">
     <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github" alt="GitHub Repository">
   </a>
   <img src="https://img.shields.io/badge/Python-3.x-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
