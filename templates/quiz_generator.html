@@ -10,7 +10,8 @@
     <link rel="icon" href="{{ url_for('static', filename='images/quiz_logo.png') }}" type="image/png">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/quiz-generator.css') }}">
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -330,7 +331,8 @@
 
     </div>
 
-    <script src="/static/script.js"></script>
+    <script src="{{ url_for('static', filename='/js/base.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/quiz-generator.js') }}"></script>
 
 </body>
 

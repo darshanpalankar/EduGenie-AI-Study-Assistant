@@ -16,7 +16,11 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- highlight.js: syntax-highlights the generated code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/code-generator.css') }}">
 </head>
 
 <body class="code-generator-page">
@@ -57,11 +61,13 @@
                         </div>
                         <ul class="dropdown-menu">
                             <li data-value="Python">
-                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" alt="Python">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg"
+                                    alt="Python">
                                 <span>Python</span>
                             </li>
                             <li data-value="JavaScript">
-                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" alt="JavaScript">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg"
+                                    alt="JavaScript">
                                 <span>JavaScript</span>
                             </li>
                             <!-- <li data-value="HTML">
@@ -69,19 +75,23 @@
                                 <span>HTML</span>
                             </li> -->
                             <li data-value="Java">
-                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" alt="Java">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg"
+                                    alt="Java">
                                 <span>Java</span>
                             </li>
                             <li data-value="C++">
-                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" alt="C++">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg"
+                                    alt="C++">
                                 <span>C++</span>
                             </li>
                             <li data-value="Go">
-                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg" alt="Go">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg"
+                                    alt="Go">
                                 <span>Go</span>
                             </li>
                             <li data-value="Rust">
-                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-original.svg" alt="Rust">
+                                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-original.svg"
+                                    alt="Rust">
                                 <span>Rust</span>
                             </li>
                         </ul>
@@ -127,7 +137,7 @@
         </div>
 
 
-         <!-- ================= OUTPUT CARD ================= -->
+        <!-- ================= OUTPUT CARD ================= -->
 
         <div class="card output-card">
             <div class="output-header">
@@ -156,7 +166,13 @@
             </div>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <!-- highlight.js core (cdnjs build bundles all languages) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/code-generator.js') }}"></script>
 
 </body>
+
 </html>

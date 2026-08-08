@@ -5,17 +5,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EduGenie AI</title>
+
   <link rel="icon" href="{{ url_for('static', filename='images/edugenie_ai_favicon.png') }}" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='/css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='/css/chat.css') }}">
 </head>
 
-<body>
-
-  <div class="lamp-glow" aria-hidden="true"></div>
+<body class="chat-page">
 
   <header class="app-header">
     <div class="brand">
@@ -32,12 +33,21 @@
     <div class="messages" id="messages">
       <div class="msg bot" id="greetMsg">
         <div class="greet">
-          <h1>Hey, Welcome Back!</h1>
-          <p>Ask me anything - from tricky concepts to quick explanations.</p>
+          <div class="mark" aria-hidden="true">
+            <!-- <video muted playsinline width="220">
+              <source src="static/images/ai_robot_animated.webm" type="video/webm">
+              Your browser does not support the video tag.
+            </video> -->
+            <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt="" class="mark-img">
+          </div>
+          <h1>Hey, Welcome back.</h1>
+          <p>Ask me anything &mdash; from tricky concepts to quick explanations.</p>
           <div class="suggestions">
             <button type="button" class="suggestion-chip" data-prompt="Explain API in simple terms">Explain API</button>
-            <button type="button" class="suggestion-chip" data-prompt="Give me 5 tips to study more effectively">Study tips</button>
-            <button type="button" class="suggestion-chip" data-prompt="What's the difference between a stack and a queue?">Stack vs queue</button>
+            <button type="button" class="suggestion-chip" data-prompt="Give me 5 tips to study more effectively">Study
+              tips</button>
+            <button type="button" class="suggestion-chip"
+              data-prompt="What's the difference between a stack and a queue?">Stack vs queue</button>
           </div>
         </div>
       </div>
@@ -51,13 +61,16 @@
         </svg>
       </button>
     </form>
+    <p class="composer-hint">EduGenie can make mistakes. Verify important information.</p>
   </main>
 
   <!-- marked: renders markdown (bold, bullet points, numbered lists, etc.) to HTML -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
   <!-- DOMPurify: sanitizes the HTML produced by marked before it's inserted into the page -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <script src="{{ url_for('static', filename='/js/base.js') }}"></script>
+  <script src="{{ url_for('static', filename='/js/chat.js') }}"></script>
 </body>
 
 </html>

@@ -9,7 +9,8 @@
     <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}" type="image/png">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +52,7 @@
 
                 <a href="#">About</a>
 
+                <a href="#">How it's work?</a>
             </nav>
 
             <!-- Button -->
@@ -87,13 +89,11 @@
 
                 <h1>
 
-                    Your AI Study Assistant
+                    Your AI Study Assistant For
 
                     <br>
 
-                    For
-
-                    <span>Smarter Learning</span>
+                    <span><span id="heroTypewriter">Smarter Learning</span><span class="typewriter-cursor" aria-hidden="true"></span></span>
 
                 </h1>
 
@@ -315,7 +315,8 @@
 
     </footer>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 
 </body>
 

@@ -207,7 +207,7 @@ class CodeGenerator:
                 if session_id not in _chats_:
                     client = self.get_client()
                     chat_obj = client.chats.create(
-                        model="gemini-3.6-flash",
+                        model="gemini-2.5-flash",
                         config={"system_instruction": SYSTEM_INSTRUCTION},
                     )
                     _chats_[session_id] = {"client": client, "chat": chat_obj}

@@ -1,0 +1,480 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+/* ==========================================
+   Code Generator Page
+   (scoped to its own page background/color so
+   it doesn't inherit the chat theme's body rules)
+========================================== */
+
+.code-generator-page .note-generator-page {
+    background: #f8f9fb;
+    color: #1f2937;
+    font-family: "JetBrains Mono", sans-serif;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.code-generator-page .container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Page Title */
+
+.code-generator-page .page-title {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.code-generator-page .title-icon {
+    width: 58px;
+    height: 58px;
+    background: #ffffff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2f66ff;
+    font-size: 26px;
+    border: 1px solid #e6e8ee;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .04);
+}
+
+.code-generator-page .page-title h1 {
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.code-generator-page .page-title p {
+    color: #6b7280;
+    font-size: 18px;
+}
+
+/* Cards */
+
+.code-generator-page .card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 30px;
+    border: 1px solid #eceff5;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .04);
+    margin-bottom: 24px;
+    transition: .3s;
+}
+
+.code-generator-page .card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, .06);
+}
+
+/* Input Grid */
+
+.code-generator-page .card-grid {
+    display: grid;
+    grid-template-columns:
+        2fr 1fr 1fr;
+    gap: 26px;
+    align-items: start;
+}
+
+.code-generator-page .prompt {
+    grid-row: span 2;
+    position: relative;
+}
+
+.code-generator-page .field label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Textarea */
+
+.code-generator-page textarea {
+    width: 100%;
+    height: 170px;
+    resize: none;
+    border: 1px solid #dde2eb;
+    border-radius: 14px;
+    padding: 18px;
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+    outline: none;
+    transition: all .3s ease;
+}
+
+.code-generator-page textarea:focus {
+    border-color: #4b7bff;
+    box-shadow:
+        0 0 0 4px rgba(75, 123, 255, .12);
+}
+
+.code-generator-page .counter {
+    position: absolute;
+    bottom: 18px;
+    right: 18px;
+    color: #8b93a5;
+    font-size: 14px;
+}
+
+/* Dropdowns */
+
+.code-generator-page .select-box {
+    height: 58px;
+    border: 1px solid #dde2eb;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 18px;
+    cursor: pointer;
+    transition: all .3s ease;
+}
+
+.code-generator-page .select-box:hover {
+    border-color: #2f66ff;
+}
+
+.code-generator-page .select-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.code-generator-page .select-left img {
+    width: 24px;
+}
+
+.code-generator-page .select-left span {
+    font-size: 16px;
+}
+
+.code-generator-page .green-dot,
+.code-generator-page .dot {
+    width: 10px;
+    height: 10px;
+    background: #43c36b;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.code-generator-page .dot-green {
+    background: #43c36b;
+}
+
+.code-generator-page .dot-amber {
+    background: #e8a33d;
+}
+
+.code-generator-page .dot-red {
+    background: #e35555;
+}
+
+.code-generator-page .select-box i {
+    color: #6b7280;
+    transition: transform .25s ease;
+}
+
+/* Dropdown */
+
+.code-generator-page .dropdown {
+    position: relative;
+}
+
+.code-generator-page .dropdown.open .select-box i {
+    transform: rotate(180deg);
+}
+
+.code-generator-page .dropdown.open .select-box {
+    border-color: #2f66ff;
+}
+
+.code-generator-page .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e6e8ee;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
+    list-style: none;
+    padding: 8px;
+    z-index: 20;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.code-generator-page .dropdown.open .dropdown-menu {
+    display: block;
+}
+
+.code-generator-page .dropdown-menu li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background .15s ease;
+}
+
+.code-generator-page .dropdown-menu li:hover {
+    background: #f2f5ff;
+}
+
+.code-generator-page .dropdown-menu li img {
+    width: 22px;
+    flex-shrink: 0;
+}
+
+/* Button Area */
+
+.code-generator-page .button-area {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.code-generator-page .generate-btn {
+    height: 58px;
+    padding: 0 34px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(90deg,
+            #3168ff,
+            #3f82ff);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all .3s ease;
+    box-shadow:
+        0 12px 25px rgba(49, 104, 255, .25);
+}
+
+.code-generator-page .generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 16px 30px rgba(49, 104, 255, .35);
+}
+
+.code-generator-page .generate-btn:active {
+    transform: scale(.98);
+}
+
+/* Output Card */
+
+.code-generator-page .output-card {
+    padding: 28px;
+}
+
+.code-generator-page .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.code-generator-page .output-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* Action Buttons */
+
+.code-generator-page .actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.code-generator-page .actions button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: #5b6475;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: .25s;
+}
+
+.code-generator-page .actions button:hover {
+    color: #2f66ff;
+}
+
+.code-generator-page .actions i {
+    font-size: 16px;
+}
+
+/* Code Box */
+
+.code-generator-page .code-box {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.code-generator-page .language-tag {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.code-generator-page pre {
+    margin: 0;
+    padding: 28px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.8;
+    font-family: "JetBrains Mono", monospace;
+    color: #1f2937;
+}
+
+.code-generator-page code {
+    white-space: pre;
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+}
+
+/* highlight.js: let our own .code-box/pre handle background & padding,
+   so the theme only contributes token colors. */
+.code-generator-page code.hljs {
+    background: transparent;
+    padding: 0;
+}
+
+/* Scrollbar */
+
+.code-generator-page pre::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.code-generator-page pre::-webkit-scrollbar-track {
+    background: #f2f3f7;
+    border-radius: 10px;
+}
+
+.code-generator-page pre::-webkit-scrollbar-thumb {
+    background: #c6cedb;
+    border-radius: 10px;
+}
+
+.code-generator-page pre::-webkit-scrollbar-thumb:hover {
+    background: #aeb8c9;
+}
+
+/* Responsive */
+
+@media (max-width:1100px) {
+
+    .code-generator-page .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .code-generator-page .prompt {
+        grid-row: auto;
+    }
+
+    .code-generator-page .button-area {
+        justify-content: flex-start;
+    }
+
+    .code-generator-page .generate-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .code-generator-page .output-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+    }
+}
+
+@media (max-width:768px) {
+
+    .code-generator-page .container {
+        padding: 16px;
+        margin: 25px auto;
+    }
+
+    .code-generator-page .page-title {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .code-generator-page .page-title h1 {
+        font-size: 30px;
+    }
+
+    .code-generator-page .page-title p {
+        font-size: 15px;
+    }
+
+    .code-generator-page .card {
+        padding: 20px;
+    }
+
+    .code-generator-page textarea {
+        height: 150px;
+        font-size: 15px;
+    }
+
+    .code-generator-page .actions {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .code-generator-page pre {
+        padding: 20px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width:500px) {
+
+    .code-generator-page .title-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+    }
+
+    .code-generator-page .page-title h1 {
+        font-size: 26px;
+    }
+
+    .code-generator-page .generate-btn {
+        font-size: 15px;
+    }
+
+    .code-generator-page .select-box {
+        height: 52px;
+    }
+
+    .code-generator-page .output-header h3 {
+        font-size: 20px;
+    }
+}

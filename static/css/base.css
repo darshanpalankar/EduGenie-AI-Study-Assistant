@@ -1,0 +1,46 @@
+/* ==========================================
+   Base (shared across every EduGenie page)
+   Design tokens + reset + default body layout.
+   Load this FIRST, before any page-specific
+   stylesheet (chat.css, home.css, etc.)
+========================================== */
+
+:root {
+    --bg: #FAF8F3;
+    --panel: #FFFFFF;
+    --panel-raised: #F2EFE6;
+    --ink: #26261F;
+    --ink-dim: #85817A;
+    --accent: #3D4FDB;
+    --accent-soft: rgba(61, 79, 219, 0.10);
+    --gold: #D9A441;
+    --gold-soft: rgba(217, 164, 65, 0.28);
+    --user-bubble: #3D4FDB;
+    --bot-bubble: #FFFFFF;
+    --border: rgba(38, 38, 31, 0.10);
+    --display-font: 'Fraunces', serif;
+    --body-font: 'Inter', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body-font);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
