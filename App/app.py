@@ -33,14 +33,39 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 # unformatted code when the user explicitly asks for code - that path
 
 SYSTEM_INSTRUCTION = (
-    "You are EduGenie - AI Study Assistant."
-    "For normal conversational answers, feel free to use markdown formatting "
+    "You are EduGenie - AI Study Assistant. "
+
+    "Developers: 1. Darshan Palankar, 2. Priyesh Kondvilkar. "
+
+    "When the user asks about yourself, such as 'explain yourself', "
+    "'who are you?', 'tell me about yourself', 'what is EduGenie?', "
+    "or similar questions about your identity, explain that you are "
+    "EduGenie - AI Study Assistant and include the developer names. "
+
+    "When the user asks specifically about the developers, creators, "
+    "or development team, provide the developer names. "
+
+    "Do not mention the developer names during normal conversation, "
+    "greetings, casual questions, study questions, explanations, or "
+    "other responses unless the user asks about yourself/identity or "
+    "explicitly asks about the developers. "
+
+    "Do not make up, infer, or invent any information about the developers. "
+
+    "Do not tell the user that you are Gemini or Google Gemini. "
+    "You are EduGenie - AI Study Assistant. "
+
+    "For normal conversational answers, you may use markdown formatting "
     "such as **bold**, bullet points (-), and numbered lists to make responses "
-    "clear and easy to read. Keep lists tight: no blank line between list items. "
-    "Only respond with plain, unformatted text when the user explicitly asks "
-    "for code or a code snippet - in that case, output only the code with no "
-    "markdown fences or extra formatting."
-    "EduGenie - Code Generator: When the user asks for code, respond with only the code snippet, "
+    "clear and easy to read. Keep lists tight with no blank lines between list items. "
+
+    "When the user asks for code, a code snippet, or a programming solution, "
+    "respond with only the code. Do not include markdown code fences, explanations, "
+    "introductions, conclusions, or any additional text. "
+
+    "EduGenie - Code Generator: When the user requests code, generate clean, "
+    "correct, readable, and complete code that directly addresses the user's request. "
+    "Do not add explanations unless the user explicitly asks for an explanation."
 )
 
 gemini_models = [
@@ -56,11 +81,15 @@ _chats_lock = threading.Lock()
 
 
 def clean_text(text):
-    """Strips an outer markdown code-fence wrapper (```lang ... ```) if the
+    """
+    
+    Strips an outer markdown code-fence wrapper (```lang ... ```) if the
     model added one despite being told not to. Only touches the fence
     markers themselves - it no longer blanket-removes every '*' and '`'
     character, since that was corrupting real code (e.g. *args, **kwargs,
-    pointer syntax, multiplication, JS template literals)."""
+    pointer syntax, multiplication, JS template literals).
+    
+    """
     text = (text or "").strip()
     text = re.sub(r"^```[a-zA-Z0-9]*\n?", "", text)
     text = re.sub(r"\n?```$", "", text)
@@ -77,9 +106,12 @@ RETRYABLE_EXCEPTIONS = (
 
 
 def call_with_retry(func, *args, max_attempts=3, base_delay=1.0, **kwargs):
-    """Runs func(*args, **kwargs), retrying with exponential backoff if a
+    """
+    Runs func(*args, **kwargs), retrying with exponential backoff if a
     transient network/SSL error is hit. Non-transient errors (bad API key,
-    quota exhausted, invalid request) are raised immediately, no retry."""
+    quota exhausted, invalid request) are raised immediately, no retry.
+
+    """
     last_exc = None
     for attempt in range(1, max_attempts + 1):
         try:
@@ -98,8 +130,11 @@ def call_with_retry(func, *args, max_attempts=3, base_delay=1.0, **kwargs):
 
 
 def friendly_error_message(e):
-    """Shared error translator so every /api/* route reports the same
-    user-facing messages for the same underlying failures."""
+    """
+    Shared error translator so every /api/* route reports the same
+    user-facing messages for the same underlying failures.
+    
+    """
     error_text = str(e)
 
     if isinstance(e, RETRYABLE_EXCEPTIONS) or any(
@@ -136,12 +171,15 @@ _genai_client_lock = threading.Lock()
 
 
 def get_genai_client():
-    """Returns a single shared genai.Client, created once and reused across
+    """
+    Returns a single shared genai.Client, created once and reused across
     every request. Building a new client per call (as this used to do for
     Quiz/Notes/MCQs) adds avoidable setup overhead - and loses HTTP
     keep-alive - on every single generation, which is part of why response
     times could feel randomly slow. Lock guards against two concurrent
-    requests both racing to create it on first use."""
+    requests both racing to create it on first use.
+    
+    """
     global _genai_client
     if _genai_client is None:
         with _genai_client_lock:
@@ -154,13 +192,15 @@ def get_genai_client():
 
 
 def parse_json_response(raw_text):
-    """Gemini is asked to return raw JSON, but if it wraps the payload in
+    """
+    Gemini is asked to return raw JSON, but if it wraps the payload in
     markdown fences or stray formatting anyway, clean_text() strips that
     before we parse.
 
     Raises ValueError (instead of the raw JSONDecodeError) on failure, with
     the offending text logged so truncated/malformed responses are
     diagnosable instead of just showing a bare traceback.
+
     """
     try:
         return json.loads(raw_text)
@@ -180,15 +220,20 @@ def parse_json_response(raw_text):
 
 
 def estimate_max_output_tokens(num_questions, per_question_tokens=220, base=400):
-    """Rough token budget so longer quizzes/MCQ sets don't get cut off
+    """
+    Rough token budget so longer quizzes/MCQ sets don't get cut off
     mid-response, which is the usual cause of 'Expecting X delimiter' JSON
-    errors (the payload is truncated, not actually malformed)."""
+    errors (the payload is truncated, not actually malformed).
+    
+    """
     return base + (per_question_tokens * max(1, int(num_questions or 1)))
 
 
 # Class -> Generates code
 class CodeGenerator:
-    """Wraps the Gemini chat session lifecycle (create/reuse/reset per Flask session)."""
+    """
+    Wraps the Gemini chat session lifecycle (create/reuse/reset per Flask session).
+    """
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
@@ -207,7 +252,7 @@ class CodeGenerator:
                 if session_id not in _chats_:
                     client = self.get_client()
                     chat_obj = client.chats.create(
-                        model="gemini-3.6-flash",
+                        model="gemini-2.5-flash",
                         config={"system_instruction": SYSTEM_INSTRUCTION},
                     )
                     _chats_[session_id] = {"client": client, "chat": chat_obj}
@@ -221,10 +266,10 @@ class CodeGenerator:
 
     def send_message(self, message, markdown=False):
         """
-        markdown=True  -> used by the AI Chat page. Returns Gemini's raw
+        markdown = True  -> used by the AI Chat page. Returns Gemini's raw
                            text so bold, bullets, etc. survive and can
                            be rendered as HTML on the frontend.
-        markdown=False -> used by the Code Generator page (default).
+        markdown = False -> used by the Code Generator page (default).
                            Strips markdown/code-fence characters via
                            clean_text() so raw code comes back clean.
         """
@@ -235,7 +280,10 @@ class CodeGenerator:
 
 # Class -> Generates The Quizz
 class QuizzGenerator:
-    """Generates a short, open-ended-answer quiz on a topic using Gemini."""
+    """
+    Generates a short, open-ended-answer quiz on a topic using Gemini.
+    
+    """
 
     MODEL = "gemini-3.6-flash"
 
@@ -290,7 +338,10 @@ class QuizzGenerator:
 
 # Class -> Generates The Notes
 class NotesGenerator:
-    """Generates structured plain-text study notes on a topic using Gemini."""
+    """
+    Generates structured plain-text study notes on a topic using Gemini.
+    
+    """
 
     MODEL = "gemini-3.6-flash"
 
@@ -326,7 +377,10 @@ class NotesGenerator:
 
 # Class -> Generates MCQs
 class MCQsGenerator:
-    """Generates multiple-choice questions (with options + correct answer) using Gemini."""
+    """
+    Generates multiple-choice questions (with options + correct answer) using Gemini.
+    
+    """
 
     MODEL = "gemini-3.6-flash"
 

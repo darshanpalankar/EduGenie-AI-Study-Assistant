@@ -141,3 +141,32 @@ if (heroTypewriterEl) {
     setTimeout(tick, TYPE_SPEED_MS);
   }
 }
+
+/* ---------- Scroll-reveal animations (About / How It Works) ---------- */
+
+const revealEls = document.querySelectorAll(".home-page [data-reveal]");
+
+if (revealEls.length) {
+  if (homeReducedMotionQuery.matches) {
+    revealEls.forEach((el) => el.classList.add("in-view"));
+  } else {
+    revealEls.forEach((el) => {
+      const delay = el.dataset.revealDelay;
+      if (delay) el.style.transitionDelay = `${delay}ms`;
+    });
+
+    const revealObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+    );
+
+    revealEls.forEach((el) => revealObserver.observe(el));
+  }
+}
