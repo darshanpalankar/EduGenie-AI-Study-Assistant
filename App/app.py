@@ -27,12 +27,12 @@ app = Flask(
 )
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 
-# NOTE: Gemini is now allowed to use markdown for normal conversational
-# answers (bold, bullet points, numbered lists) so the AI Chat page can
-# render nicely formatted responses. It's still told to output plain,
-# unformatted code when the user explicitly asks for code - that path
+# NOTE: AI Chat and Code Generator used to share one system instruction
+# (and, worse, one Gemini chat session - see AI_Chat/CodeGenerator below).
+# They now each get their own instruction and their own isolated session
+# store so conversation history and behavior never bleed between the two pages.
 
-SYSTEM_INSTRUCTION = (
+_IDENTITY_INSTRUCTION = (
     "You are EduGenie - AI Study Assistant. "
 
     "Developers: 1. Darshan Palankar, 2. Priyesh Kondvilkar. "
@@ -40,7 +40,7 @@ SYSTEM_INSTRUCTION = (
     "When the user asks about yourself, such as 'explain yourself', "
     "'who are you?', 'tell me about yourself', 'what is EduGenie?', "
     "or similar questions about your identity, explain that you are "
-    "EduGenie - AI Study Assistant and include the developer names. "
+    "EduGenie - AI Study Assistant "
 
     "When the user asks specifically about the developers, creators, "
     "or development team, provide the developer names. "
@@ -54,30 +54,44 @@ SYSTEM_INSTRUCTION = (
 
     "Do not tell the user that you are Gemini or Google Gemini. "
     "You are EduGenie - AI Study Assistant. "
+)
 
-    "For normal conversational answers, you may use markdown formatting "
-    "such as **bold**, bullet points (-), and numbered lists to make responses "
-    "clear and easy to read. Keep lists tight with no blank lines between list items. "
+# Used by the AI Chat page (/api/chat). Conversational, markdown allowed.
+AI_CHAT_SYSTEM_INSTRUCTION = (
+    _IDENTITY_INSTRUCTION +
+    "You are EduGenie's AI Chat assistant, a general-purpose study and conversation helper. "
+    "You may use markdown formatting such as **bold**, bullet points (-), "
+    "and numbered lists to make responses clear and easy to read. "
+    "Keep lists tight with no blank lines between list items. "
+    "If the user asks for code as part of the conversation, you may include "
+    "it in a fenced code block along with explanation, since this is a "
+    "chat context, not the dedicated Code Generator."
+)
 
-    "When the user asks for code, a code snippet, or a programming solution, "
-    "respond with only the code. Do not include markdown code fences, explanations, "
-    "introductions, conclusions, or any additional text. "
-
+# Used by the Code Generator page (/api/generate). Code-only, no prose.
+CODE_GEN_SYSTEM_INSTRUCTION = (
+    _IDENTITY_INSTRUCTION +
     "EduGenie - Code Generator: When the user requests code, generate clean, "
-    "correct, readable, and complete code that directly addresses the user's request. "
-    "Do not add explanations unless the user explicitly asks for an explanation."
+    "correct, readable, and complete code that directly addresses the "
+    "user's request. "
+    "Respond with only the code. Do not include markdown code fences, "
+    "explanations, introductions, conclusions, or any additional text. "
+    "Do not add explanations unless the user explicitly asks for an "
+    "explanation."
 )
 
 gemini_models = [
     'gemini-3.5-flash-lite',
     'gemini-3.6-flash',
     'gemini-3.5-flash',
-    'gemini-2.5-pro',
     'gemini-2.5-flash'
     ]
 
-_chats_ = {}
-_chats_lock = threading.Lock()
+_ai_chats_ = {}
+_ai_chats_lock = threading.Lock()
+
+_code_chats_ = {}
+_code_chats_lock = threading.Lock()
 
 
 def clean_text(text):
@@ -228,12 +242,70 @@ def estimate_max_output_tokens(num_questions, per_question_tokens=220, base=400)
     """
     return base + (per_question_tokens * max(1, int(num_questions or 1)))
 
+# Class -> Powers the AI Chat page
+class AI_Chat:
+    """
+    Wraps the Gemini chat session lifecycle for the AI Chat page
+    (create/reuse/reset per Flask session). Uses its own session_id key
+    and its own _ai_chats_ store so it never shares conversation history
+    or system instruction with the Code Generator.
+    """
+
+    MODEL = "gemini-3.5-flash-lite"
+
+    def __init__(self):
+        self.name = "EduGenie - AI Chat"
+
+    def get_client(self):
+        return get_genai_client()
+
+    def _session_key(self):
+        if "ai_chat_session_id" not in session:
+            session["ai_chat_session_id"] = str(uuid.uuid4())
+        return session["ai_chat_session_id"]
+
+    def get_chat(self):
+        session_id = self._session_key()
+
+        if session_id not in _ai_chats_:
+            with _ai_chats_lock:
+                if session_id not in _ai_chats_:
+                    client = self.get_client()
+                    chat_obj = client.chats.create(
+                        model=self.MODEL,
+                        config={"system_instruction": AI_CHAT_SYSTEM_INSTRUCTION},
+                    )
+                    _ai_chats_[session_id] = {"client": client, "chat": chat_obj}
+
+        return _ai_chats_[session_id]["chat"]
+
+    def reset_chat(self):
+        session_id = session.get("ai_chat_session_id")
+        if session_id and session_id in _ai_chats_:
+            with _ai_chats_lock:
+                _ai_chats_.pop(session_id, None)
+
+    def send_message(self, message):
+        """
+        Returns Gemini's raw markdown text (bold, bullets, fenced code
+        blocks, etc. all survive) so the frontend's marked.js + DOMPurify
+        pipeline can render it.
+        """
+        chat = self.get_chat()
+        response = call_with_retry(chat.send_message, message)
+        return clean_text(response.text)
+
 
 # Class -> Generates code
 class CodeGenerator:
     """
-    Wraps the Gemini chat session lifecycle (create/reuse/reset per Flask session).
+    Wraps the Gemini chat session lifecycle for the Code Generator page
+    (create/reuse/reset per Flask session). Uses its own session_id key
+    and its own _code_chats_ store so it never shares conversation history
+    or system instruction with AI Chat.
     """
+
+    MODEL = "gemini-2.5-flash"
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
@@ -241,41 +313,40 @@ class CodeGenerator:
     def get_client(self):
         return get_genai_client()
 
+    def _session_key(self):
+        if "code_session_id" not in session:
+            session["code_session_id"] = str(uuid.uuid4())
+        return session["code_session_id"]
+
     def get_chat(self):
-        if "session_id" not in session:
-            session["session_id"] = str(uuid.uuid4())
+        session_id = self._session_key()
 
-        session_id = session["session_id"]
-
-        if session_id not in _chats_:
-            with _chats_lock:
-                if session_id not in _chats_:
+        if session_id not in _code_chats_:
+            with _code_chats_lock:
+                if session_id not in _code_chats_:
                     client = self.get_client()
                     chat_obj = client.chats.create(
-                        model="gemini-2.5-flash",
-                        config={"system_instruction": SYSTEM_INSTRUCTION},
+                        model=self.MODEL,
+                        config={"system_instruction": CODE_GEN_SYSTEM_INSTRUCTION},
                     )
-                    _chats_[session_id] = {"client": client, "chat": chat_obj}
+                    _code_chats_[session_id] = {"client": client, "chat": chat_obj}
 
-        return _chats_[session_id]["chat"]
+        return _code_chats_[session_id]["chat"]
 
     def reset_chat(self):
-        session_id = session.get("session_id")
-        if session_id and session_id in _chats_:
-            del _chats_[session_id]
+        session_id = session.get("code_session_id")
+        if session_id and session_id in _code_chats_:
+            with _code_chats_lock:
+                _code_chats_.pop(session_id, None)
 
-    def send_message(self, message, markdown=False):
+    def send_message(self, message):
         """
-        markdown = True  -> used by the AI Chat page. Returns Gemini's raw
-                           text so bold, bullets, etc. survive and can
-                           be rendered as HTML on the frontend.
-        markdown = False -> used by the Code Generator page (default).
-                           Strips markdown/code-fence characters via
-                           clean_text() so raw code comes back clean.
+        Strips markdown/code-fence characters via clean_text() so raw
+        code comes back clean, with no prose around it.
         """
         chat = self.get_chat()
         response = call_with_retry(chat.send_message, message)
-        return response.text if markdown else clean_text(response.text)
+        return clean_text(response.text)
 
 
 # Class -> Generates The Quizz
@@ -436,6 +507,7 @@ class MCQsGenerator:
                 logger.warning("MCQ JSON parse attempt %s/2 failed, retrying.", attempt)
         raise last_error
 
+ai_chat_generator = AI_Chat()
 generator = CodeGenerator()
 quiz_generator = QuizzGenerator()
 notes_generator = NotesGenerator()
@@ -474,18 +546,42 @@ def quiz_generator_page():
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
+    """
+    AI Chat page. Backed by AI_Chat - its own Gemini session, its own
+    system instruction.
+    """
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
-    use_markdown = bool(data.get("markdown"))
 
     if not user_message:
         return jsonify({"error": "Message cannot be empty."}), 400
 
     try:
-        reply = generator.send_message(user_message, markdown=use_markdown)
+        reply = ai_chat_generator.send_message(user_message)
         return jsonify({"reply": reply})
     except Exception as e:
-        logger.exception("Error while generating a response")
+        logger.exception("Error while generating a chat response")
+        return jsonify({"error": friendly_error_message(e)}), 500
+
+
+@app.route("/api/generate", methods=["POST"])
+def generate_code():
+    """
+    Code Generator page. Backed by CodeGenerator - its own Gemini
+    session, its own system instruction, completely isolated from AI Chat.
+    """
+
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get("message") or "").strip()
+
+    if not user_message:
+        return jsonify({"error": "Message cannot be empty."}), 400
+
+    try:
+        reply = generator.send_message(user_message)
+        return jsonify({"reply": reply})
+    except Exception as e:
+        logger.exception("Error while generating code")
         return jsonify({"error": friendly_error_message(e)}), 500
 
 
@@ -547,8 +643,27 @@ def generate_mcqs():
 
 @app.route("/api/reset", methods=["POST"])
 def reset():
-    generator.reset_chat()
-    session.pop("session_id", None)
+    """
+    Resets chat history. Accepts an optional {"type": "chat" | "code"}
+    body to reset just one page's session; with no body (or an unknown
+    type) both are reset, since AI Chat and Code Generator now keep
+    fully separate sessions and won't affect each other either way.
+    """
+    data = request.get_json(silent=True) or {}
+    reset_type = (data.get("type") or "").strip().lower()
+
+    if reset_type == "chat":
+        ai_chat_generator.reset_chat()
+        session.pop("ai_chat_session_id", None)
+    elif reset_type == "code":
+        generator.reset_chat()
+        session.pop("code_session_id", None)
+    else:
+        ai_chat_generator.reset_chat()
+        generator.reset_chat()
+        session.pop("ai_chat_session_id", None)
+        session.pop("code_session_id", None)
+
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":

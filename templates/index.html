@@ -93,7 +93,8 @@
 
                     <br>
 
-                    <span><span id="heroTypewriter">Smarter Learning</span><span class="typewriter-cursor" aria-hidden="true"></span></span>
+                    <span><span id="heroTypewriter">Smarter Learning</span><span class="typewriter-cursor"
+                            aria-hidden="true"></span></span>
 
                 </h1>
 
@@ -211,89 +212,89 @@
 
                 <div class="feature-track" id="featureTrack">
 
-                <!-- Card 1: AI Chat -->
+                    <!-- Card 1: AI Chat -->
 
-                <a href="/ai-chat" target="_blank" class="feature-card">
+                    <a href="/ai-chat" target="_blank" class="feature-card">
 
-                    <div class="icon">
+                        <div class="icon">
 
-                        <i class="ri-message-3-line"></i>
+                            <i class="ri-message-3-line"></i>
 
-                    </div>
+                        </div>
 
-                    <h3>AI Chat Assistant</h3>
+                        <h3>AI Chat Assistant</h3>
 
-                    <p>
+                        <p>
 
-                        Ask questions instantly and receive
-                        intelligent explanations anytime.
+                            Ask questions instantly and receive
+                            intelligent explanations anytime.
 
-                    </p>
+                        </p>
 
-                </a>
+                    </a>
 
-                <!-- Card 2: Code Generator -->
+                    <!-- Card 2: Code Generator -->
 
-                <a href="/code-generator" target="_blank" class="feature-card">
+                    <a href="/code-generator" target="_blank" class="feature-card">
 
-                    <div class="icon">
+                        <div class="icon">
 
-                        <i class="ri-code-box-line"></i>
+                            <i class="ri-code-box-line"></i>
 
-                    </div>
+                        </div>
 
-                    <h3>Code Generator</h3>
+                        <h3>Code Generator</h3>
 
-                    <p>
+                        <p>
 
-                        Generate clean code in multiple
-                        programming languages.
+                            Generate clean code in multiple
+                            programming languages.
 
-                    </p>
+                        </p>
 
-                </a>
+                    </a>
 
-                <!-- Card 3: Notes Generator -->
+                    <!-- Card 3: Notes Generator -->
 
-                <a href="#" class="feature-card">
+                    <a href="#" class="feature-card">
 
-                    <div class="icon">
+                        <div class="icon">
 
-                        <i class="ri-file-text-line"></i>
+                            <i class="ri-file-text-line"></i>
 
-                    </div>
+                        </div>
 
-                    <h3>Note Generator</h3>
+                        <h3>Note Generator</h3>
 
-                    <p>
+                        <p>
 
-                        Generate well-structured notes
-                        from any topic within seconds.
+                            Generate well-structured notes
+                            from any topic within seconds.
 
-                    </p>
+                        </p>
 
-                </a>
+                    </a>
 
-                <!-- Card 4: Quiz Generator -->
+                    <!-- Card 4: Quiz Generator -->
 
-                <a href="#" class="feature-card">
+                    <a href="#" class="feature-card">
 
-                    <div class="icon">
+                        <div class="icon">
 
-                        <i class="ri-question-answer-line"></i>
+                            <i class="ri-question-answer-line"></i>
 
-                    </div>
+                        </div>
 
-                    <h3>Quiz Generator</h3>
+                        <h3>Quiz Generator</h3>
 
-                    <p>
+                        <p>
 
-                        Create AI-powered quizzes
-                        to improve your knowledge.
+                            Create AI-powered quizzes
+                            to improve your knowledge.
 
-                    </p>
+                        </p>
 
-                </a>
+                    </a>
 
                 </div>
 
@@ -376,24 +377,135 @@
 
                 <div class="about-circle"></div>
 
-                <div class="about-card" data-reveal="scale" data-reveal-delay="200">
+                <div class="testimonial-card" data-reveal="scale" data-reveal-delay="200">
 
-                    <div class="about-card-icon">
-                        <i class="ri-sparkling-2-fill"></i>
+                    <span class="testimonial-quote-icon">
+                        <img src="{{ url_for('static', filename='images/quote-illustration.svg') }}" alt="">
+                    </span>
+
+                    <div class="testimonial-stars">
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
                     </div>
 
-                    <span class="about-card-number">4+</span>
+                    <p class="testimonial-text">
 
-                    <p>AI-powered tools working together in a single study assistant</p>
+                        EduGenie helped me finish my coding assignments
+                        twice as fast. The AI Chat explains concepts
+                        better than my textbook ever did.
+
+                    </p>
+
+                    <div class="testimonial-author">
+
+                        <span class="testimonial-avatar">PK</span>
+
+                        <div>
+                            <h4>Priyesh Kondvilkar</h4>
+                            <span>Computer Science Student</span>
+                        </div>
+
+                    </div>
 
                 </div>
 
                 <div class="about-chip chip-1" data-reveal="scale" data-reveal-delay="440">
-                    <i class="ri-message-3-line"></i>
+                    <img src="{{ url_for('static', filename='images/chip-chat-illustration.svg') }}" alt="">
                 </div>
 
                 <div class="about-chip chip-2" data-reveal="scale" data-reveal-delay="520">
-                    <i class="ri-code-s-slash-line"></i>
+                    <img src="{{ url_for('static', filename='images/chip-like-illustration.svg') }}" alt="">
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Video showcase -->
+
+        <div class="container">
+
+            <div class="about-video-frame" data-reveal="scale" data-reveal-delay="120">
+
+                <div class="about-video-topbar">
+                    <span class="about-video-dot dot-red"></span>
+                    <span class="about-video-dot dot-amber"></span>
+                    <span class="about-video-dot dot-green"></span>
+                    <span class="about-video-label">EduGenie — AI Chat</span>
+                </div>
+
+                <div class="about-video-body">
+
+                    <!--
+                        Drop-in replacement once real footage exists — just
+                        swap the .about-video-mock block below for:
+
+                        <video class="about-video-el" autoplay muted loop playsinline
+                            poster="{{ url_for('static', filename='images/about-video-poster.jpg') }}">
+                            <source src="{{ url_for('static', filename='videos/about-demo.mp4') }}" type="video/mp4">
+                        </video>
+                    -->
+
+                    <div class="about-video-mock">
+
+                        <div class="mock-welcome">
+                            <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt=""
+                                class="mock-welcome-robot">
+                            <p class="mock-welcome-title">Hey, Welcome back.</p>
+                            <p class="mock-welcome-sub">Ask me anything — from tricky concepts to quick explanations.
+                            </p>
+                        </div>
+
+                        <div class="mock-conversation">
+
+                            <div class="mock-row mock-row-user">
+                                <div class="mock-msg">
+                                    <span class="mock-role">You</span>
+                                    <span class="mock-bubble mock-bubble-user">Give me a beautiful poem.</span>
+                                </div>
+                            </div>
+
+                            <div class="mock-row mock-row-typing">
+                                <div class="mock-msg">
+                                    <span class="mock-role">EduGenie</span>
+                                    <span class="mock-typing"><i></i><i></i><i></i></span>
+                                </div>
+                            </div>
+
+                            <div class="mock-row mock-row-reply">
+                                <div class="mock-msg">
+                                    <span class="mock-role">EduGenie</span>
+                                    <span class="mock-bubble mock-bubble-bot">
+
+                                        <h3>🌊 Ride Your Own Tide</h3>
+
+                                        <p>
+                                            Dream with fire,<br>
+                                            Rise when you fall.<br>
+                                            Shine when you can,<br>
+                                            Miss the ball.<br><br>
+                                            Laugh through storms,<br>
+                                            Keep hope alive.<br>
+                                            Trust your own path—<br>
+                                            <strong>You are your own guide.</strong> ✨🏏
+                                        </p>
+
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- <span class="about-video-playbadge">
+                        <i class="ri-play-fill"></i>
+                        Live
+                    </span> -->
+
                 </div>
 
             </div>

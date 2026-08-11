@@ -742,7 +742,7 @@ html {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 340px;
+    min-height: 420px;
 }
 
 .home-page .about-circle {
@@ -755,48 +755,85 @@ html {
     animation: homeFloatRobot 6s ease-in-out infinite;
 }
 
-.home-page .about-card {
+.home-page .testimonial-card {
     background: #ffffff;
     border-radius: var(--home-radius);
     box-shadow: var(--home-shadow);
     border: 1px solid var(--home-border);
-    padding: 45px 40px;
-    max-width: 340px;
-    text-align: center;
+    padding: 40px 38px;
+    max-width: 360px;
     transition: transform .35s ease, box-shadow .35s ease;
 }
 
-.home-page .about-card:hover {
+.home-page .testimonial-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 25px 45px rgba(37, 99, 235, .16);
 }
 
-.home-page .about-card-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 18px;
-    border-radius: 16px;
+.home-page .testimonial-quote-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--home-primary), #60a5fa);
+    margin-bottom: 20px;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, .3);
+}
+
+.home-page .testimonial-quote-icon img {
+    width: 22px;
+    height: 22px;
+}
+
+.home-page .testimonial-stars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    color: #f5b400;
+    font-size: 15px;
+}
+
+.home-page .testimonial-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--home-text);
+    margin-bottom: 26px;
+}
+
+.home-page .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-top: 22px;
+    border-top: 1px solid var(--home-border);
+}
+
+.home-page .testimonial-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
     background: linear-gradient(135deg, var(--home-primary), #60a5fa);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
-    box-shadow: 0 12px 24px rgba(37, 99, 235, .3);
-}
-
-.home-page .about-card-number {
-    display: block;
-    font-size: 48px;
-    font-weight: 800;
-    color: var(--home-primary);
-    margin-bottom: 12px;
-}
-
-.home-page .about-card p {
+    font-weight: 700;
     font-size: 15px;
+    flex-shrink: 0;
+}
+
+.home-page .testimonial-author h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--home-text);
+    margin-bottom: 2px;
+}
+
+.home-page .testimonial-author span {
+    font-size: 13px;
     color: var(--home-text-light);
-    margin: 0;
 }
 
 .home-page .about-chip {
@@ -809,20 +846,403 @@ html {
     align-items: center;
     justify-content: center;
     box-shadow: var(--home-shadow);
-    color: var(--home-primary);
-    font-size: 24px;
     animation: homeFloating 4s ease-in-out infinite;
 }
 
+.home-page .about-chip img {
+    width: 28px;
+    height: 28px;
+}
+
 .home-page .about-chip.chip-1 {
-    top: 8%;
-    left: 4%;
+    top: 4%;
+    left: 2%;
 }
 
 .home-page .about-chip.chip-2 {
-    bottom: 10%;
-    right: 6%;
+    bottom: 8%;
+    right: 4%;
     animation-delay: .6s;
+}
+
+/*======================================
+  About — Video Showcase
+======================================*/
+
+.home-page .about-video-frame {
+    margin-top: 80px;
+    background: #ffffff;
+    border-radius: 22px;
+    border: 1px solid var(--home-border);
+    box-shadow: var(--home-shadow);
+    overflow: hidden;
+}
+
+.home-page .about-video-topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--home-border);
+    background: #fafbfe;
+}
+
+.home-page .about-video-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+.home-page .about-video-dot.dot-red {
+    background: #f87171;
+}
+
+.home-page .about-video-dot.dot-amber {
+    background: #fbbf24;
+}
+
+.home-page .about-video-dot.dot-green {
+    background: #34d399;
+}
+
+.home-page .about-video-label {
+    margin-left: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--home-text-light);
+}
+
+.home-page .about-video-body {
+    position: relative;
+    aspect-ratio: 16 / 7.5;
+    background: #fafaf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.home-page .about-video-el {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.home-page .about-video-playbadge {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(37, 99, 235, .1);
+    color: var(--home-primary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    padding: 6px 12px 6px 8px;
+    border-radius: 999px;
+}
+
+.home-page .about-video-playbadge i {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    background: var(--home-primary);
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 10px;
+    animation: aboutVideoPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes aboutVideoPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, .45);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+    }
+}
+
+/* ---- Animated placeholder (swap for a real <video> when ready) ---- */
+
+.home-page .about-video-mock {
+    position: relative;
+    width: min(440px, 82%);
+    height: 230px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.home-page .mock-welcome {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+    opacity: 0;
+    animation: mockWelcomeStage 10s ease infinite;
+}
+
+.home-page .mock-welcome-robot {
+    width: 74px;
+    height: auto;
+    margin-bottom: 6px;
+    animation: homeFloatRobot 4s ease-in-out infinite;
+}
+
+.home-page .mock-welcome-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 21px;
+    color: #17171a;
+}
+
+.home-page .mock-welcome-sub {
+    font-size: 12.5px;
+    color: #77767e;
+    max-width: 260px;
+    line-height: 1.5;
+}
+
+.home-page .mock-conversation {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 22px;
+}
+
+.home-page .mock-row {
+    display: flex;
+    opacity: 0;
+}
+
+.home-page .mock-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 82%;
+}
+
+.home-page .mock-row-user {
+    justify-content: flex-end;
+    animation: mockFadeHold 10s ease infinite;
+}
+
+.home-page .mock-row-user .mock-msg {
+    align-items: flex-end;
+}
+
+.home-page .mock-row-typing {
+    justify-content: flex-start;
+    animation: mockTypingStage 10s ease infinite;
+}
+
+.home-page .mock-row-reply {
+    justify-content: flex-start;
+    animation: mockReplyStage 10s ease infinite;
+}
+
+.home-page .mock-role {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #b4b2bb;
+    margin-bottom: 6px;
+}
+
+.home-page .mock-bubble {
+    font-size: 13.5px;
+    line-height: 1.65;
+}
+
+.home-page .mock-bubble-user {
+    background: #17171a;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 12px 12px 3px 12px;
+    font-weight: 400;
+}
+
+.home-page .mock-bubble-bot {
+    color: #17171a;
+    font-weight: 300;
+}
+
+.home-page .mock-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.home-page .mock-typing i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #b4b2bb;
+    animation: mockDotBounce 1s ease-in-out infinite;
+}
+
+.home-page .mock-typing i:nth-child(2) {
+    animation-delay: .15s;
+}
+
+.home-page .mock-typing i:nth-child(3) {
+    animation-delay: .3s;
+}
+
+@keyframes mockDotBounce {
+
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: .4;
+    }
+
+    30% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+@keyframes mockWelcomeStage {
+    0% {
+        opacity: 0;
+    }
+
+    3% {
+        opacity: 1;
+    }
+
+    22% {
+        opacity: 1;
+    }
+
+    27%,
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes mockFadeHold {
+
+    0%,
+    29% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    34% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    95% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes mockTypingStage {
+
+    0%,
+    38% {
+        opacity: 0;
+    }
+
+    42% {
+        opacity: 1;
+    }
+
+    54% {
+        opacity: 1;
+    }
+
+    58%,
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes mockReplyStage {
+
+    0%,
+    56% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    62% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    95% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .home-page .mock-row-user,
+    .home-page .mock-row-typing,
+    .home-page .mock-row-reply,
+    .home-page .mock-typing i,
+    .home-page .about-video-playbadge i {
+        animation: none;
+    }
+
+    .home-page .mock-row-user,
+    .home-page .mock-row-reply {
+        opacity: 1;
+    }
+
+    .home-page .mock-row-typing {
+        display: none;
+    }
+
+    .home-page .mock-welcome {
+        display: none;
+    }
+}
+
+@media (max-width:768px) {
+    .home-page .about-video-frame {
+        margin-top: 50px;
+    }
+
+    .home-page .about-video-body {
+        aspect-ratio: 4 / 5;
+    }
+
+    .home-page .about-video-mock {
+        width: 88%;
+    }
 }
 
 /*======================================
