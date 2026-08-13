@@ -27,15 +27,11 @@ app = Flask(
 )
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 
-# NOTE: AI Chat and Code Generator used to share one system instruction
-# (and, worse, one Gemini chat session - see AI_Chat/CodeGenerator below).
-# They now each get their own instruction and their own isolated session
-# store so conversation history and behavior never bleed between the two pages.
-
 _IDENTITY_INSTRUCTION = (
     "You are EduGenie - AI Study Assistant. "
 
     "Developers: 1. Darshan Palankar, 2. Priyesh Kondvilkar. "
+    "Are the Computer Science students at Patkar-Varde College , Goregaon, Mumbai. "
 
     "When the user asks about yourself, such as 'explain yourself', "
     "'who are you?', 'tell me about yourself', 'what is EduGenie?', "
@@ -78,6 +74,25 @@ CODE_GEN_SYSTEM_INSTRUCTION = (
     "explanations, introductions, conclusions, or any additional text. "
     "Do not add explanations unless the user explicitly asks for an "
     "explanation."
+)
+
+# Used by the Math Solver page (/api/math-solve). Strict JSON, step-by-step.
+MATH_SOLVER_SYSTEM_INSTRUCTION = (
+    _IDENTITY_INSTRUCTION +
+    "You are EduGenie's Math Solver. Given a math problem and, optionally, "
+    "a topic (algebra, calculus, geometry, trigonometry, statistics, or "
+    "auto), solve it and show your work as a sequence of clear steps. "
+    "Respond with strict JSON only, no markdown, no code fences, no text "
+    "outside the JSON object, in exactly this shape: "
+    '{"steps": [{"title": string, "body": string, "math": string}], '
+    '"answer": {"text": string, "math": string}}. '
+    "Keep each step's body to one or two sentences explaining the "
+    "reasoning in plain English. Put every mathematical expression in the "
+    "'math' field as raw LaTeX (no $ or \\( \\) delimiters) - the frontend "
+    "renders it with KaTeX. Leave 'math' as an empty string on a step that "
+    "has no expression to show. The 'answer.math' field must contain the "
+    "final simplified result in LaTeX, and 'answer.text' a short plain-"
+    "English restatement of it."
 )
 
 gemini_models = [
@@ -507,11 +522,64 @@ class MCQsGenerator:
                 logger.warning("MCQ JSON parse attempt %s/2 failed, retrying.", attempt)
         raise last_error
 
+# Class -> Solves math problems step by step
+class MathSolver:
+    """
+    Solves a single math problem and returns a step-by-step breakdown plus
+    a final answer, both as strict JSON. Stateless like QuizzGenerator/
+    MCQsGenerator - each call is independent, there's no running chat
+    session to isolate or reset.
+    """
+
+    MODEL = "gemini-3.6-flash"
+
+    SYSTEM_INSTRUCTION = MATH_SOLVER_SYSTEM_INSTRUCTION
+
+    def __init__(self):
+        self.name = "EduGenie - Math Solver"
+
+    def get_client(self):
+        return get_genai_client()
+
+    def solve(self, problem, topic="auto"):
+        client = self.get_client()
+        prompt = (
+            f"Topic: {topic}\n"
+            f"Problem: {problem}\n"
+            "Solve this now."
+        )
+        config = {
+            "system_instruction": self.SYSTEM_INSTRUCTION,
+            "response_mime_type": "application/json",
+            "max_output_tokens": estimate_max_output_tokens(1, per_question_tokens=600, base=300),
+        }
+
+        last_error = None
+        for attempt in range(1, 3):
+            response = call_with_retry(
+                client.models.generate_content,
+                model=self.MODEL,
+                contents=prompt if attempt == 1 else prompt + (
+                    "\n\nYour previous response was not valid, complete JSON. "
+                    "Respond again with ONLY the complete, valid JSON object - "
+                    "no truncation, no markdown, no extra text."
+                ),
+                config=config,
+            )
+            try:
+                return parse_json_response(response.text)
+            except ValueError as e:
+                last_error = e
+                logger.warning("Math Solver JSON parse attempt %s/2 failed, retrying.", attempt)
+        raise last_error
+
+
 ai_chat_generator = AI_Chat()
 generator = CodeGenerator()
 quiz_generator = QuizzGenerator()
 notes_generator = NotesGenerator()
 mcqs_generator = MCQsGenerator()
+math_solver_generator = MathSolver()
 
 
 @app.route("/")
@@ -542,6 +610,11 @@ def mcq_generator():
 @app.route("/quiz-generator")
 def quiz_generator_page():
     return render_template("quiz_generator.html")
+
+
+@app.route("/math-solver")
+def math_solver_page():
+    return render_template("maths-solver.html")
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -638,6 +711,24 @@ def generate_mcqs():
         return jsonify(mcqs)
     except Exception as e:
         logger.exception("Error while generating MCQs")
+        return jsonify({"error": friendly_error_message(e)}), 500
+
+
+@app.route("/api/math-solve", methods=["POST"])
+def solve_math():
+    data = request.get_json(silent=True) or {}
+    problem = (data.get("problem") or "").strip()
+
+    if not problem:
+        return jsonify({"error": "Please enter a problem to solve."}), 400
+
+    topic = (data.get("topic") or "auto").strip() or "auto"
+
+    try:
+        solution = math_solver_generator.solve(problem, topic=topic)
+        return jsonify(solution)
+    except Exception as e:
+        logger.exception("Error while solving a math problem")
         return jsonify({"error": friendly_error_message(e)}), 500
 
 

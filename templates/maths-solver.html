@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EduGenie — Math Solver</title>
+
+<!-- Fonts: Inter (body) + Fraunces (display), matching base.css's --body-font / --display-font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
+
+<!-- KaTeX for rendering mathematical notation -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/maths.css') }}">
+</head>
+<body class="math-solver-page">
+
+<!-- ================= HEADER =================
+     Intentionally left out here. Drop in this project's existing site
+     header/nav markup instead - copy whatever quiz_generator.html or
+     code_generator.html already uses for their header block. -->
+
+
+<!-- ================= HERO ================= -->
+<section class="ms-hero">
+  <p class="ms-eyebrow">Show your work, instantly</p>
+  <h1 class="ms-title"><em>Math</em>&nbsp;Solver</h1>
+  <p class="ms-subtitle">Type any problem — algebra, calculus, geometry, trigonometry or statistics — and get a full worked solution, one step at a time.</p>
+</section>
+
+<!-- ================= MAIN WORKSPACE ================= -->
+<main class="ms-workspace">
+
+  <!-- INPUT PANEL -->
+  <section class="ms-panel ms-input-panel" aria-label="Enter a problem">
+    <div class="ms-panel-head">
+      <h2>Your problem</h2>
+      <span class="ms-panel-hint">Plain text or LaTeX both work</span>
+    </div>
+
+    <div class="ms-chip-row" id="msCategoryRow" role="listgroup" aria-label="Topic">
+      <button class="ms-chip is-active" data-topic="auto" type="button">Auto-detect</button>
+      <button class="ms-chip" data-topic="algebra" type="button">Algebra</button>
+      <button class="ms-chip" data-topic="calculus" type="button">Calculus</button>
+      <button class="ms-chip" data-topic="geometry" type="button">Geometry</button>
+      <button class="ms-chip" data-topic="trigonometry" type="button">Trigonometry</button>
+      <button class="ms-chip" data-topic="statistics" type="button">Statistics</button>
+    </div>
+
+    <div class="ms-input-wrap">
+      <textarea id="msProblemInput" placeholder="e.g. Solve for x: 3x + 7 = 22" rows="4"></textarea>
+      <div class="ms-input-preview" id="msLivePreview" aria-hidden="true"></div>
+    </div>
+
+    <div class="ms-example-row">
+      <span class="ms-example-label">Try:</span>
+      <button class="ms-example-chip" type="button" data-example="Solve for x: 3x + 7 = 22">3x + 7 = 22</button>
+      <button class="ms-example-chip" type="button" data-example="Solve: 2x^2 - 5x - 3 = 0">2x² − 5x − 3 = 0</button>
+      <button class="ms-example-chip" type="button" data-example="Find the derivative of f(x) = 3x^3 - 2x^2 + 5">d/dx of 3x³−2x²+5</button>
+      <button class="ms-example-chip" type="button" data-example="What is 18% of 250?">18% of 250</button>
+    </div>
+
+    <div class="ms-actions">
+      <button id="msClearBtn" class="ms-btn ms-btn-ghost" type="button">Clear</button>
+      <button id="msSolveBtn" class="ms-btn ms-btn-primary" type="button">
+        <span class="ms-btn-label">Solve</span>
+        <svg class="ms-btn-spinner" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- SOLUTION PANEL -->
+  <section class="ms-panel ms-solution-panel" aria-label="Worked solution" aria-live="polite">
+    <div class="ms-panel-head">
+      <h2>Worked solution</h2>
+      <button id="msCopyBtn" class="ms-copy-btn" type="button" hidden>Copy steps</button>
+    </div>
+
+    <div class="ms-solution-scroll" id="msSolutionScroll">
+      <div class="ms-empty-state" id="msEmptyState">
+        <svg viewBox="0 0 64 64" class="ms-empty-icon" aria-hidden="true">
+          <rect x="10" y="6" width="44" height="52" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="18" y1="18" x2="46" y2="18" stroke="currentColor" stroke-width="2"/>
+          <line x1="18" y1="28" x2="38" y2="28" stroke="currentColor" stroke-width="2"/>
+          <line x1="18" y1="38" x2="42" y2="38" stroke="currentColor" stroke-width="2"/>
+          <line x1="18" y1="48" x2="30" y2="48" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <p>Your worked solution will appear here, step by step.</p>
+      </div>
+
+      <ol class="ms-steps" id="msSteps" hidden></ol>
+
+      <div class="ms-answer-card" id="msAnswerCard" hidden>
+        <span class="ms-answer-label">Final answer</span>
+        <div class="ms-answer-value" id="msAnswerValue"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/math_solver.js') }}"></script>
+</body>
+</html>

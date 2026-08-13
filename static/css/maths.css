@@ -1,0 +1,411 @@
+/* =========================================================
+   Math Solver — scoped entirely under body.math-solver-page
+   to prevent bleed into other EduGenie pages.
+   ========================================================= */
+
+body.math-solver-page{
+  /* Local aliases onto the shared base.css tokens — keeps this page in
+     sync automatically if the palette ever changes upstream. */
+  --ms-accent: var(--accent);
+  --ms-accent-soft: var(--accent-soft);
+  --ms-ink: var(--ink);
+  --ms-ink-soft: var(--ink-dim);
+  --ms-line: var(--border);
+  --ms-paper: var(--panel);
+  --ms-gold: var(--gold);
+  --ms-gold-soft: var(--gold-soft);
+  --ms-grid: rgba(61, 79, 219, 0.07);
+  --ms-radius:14px;
+
+  background: var(--bg);
+  /* Signature backdrop: faint graph-paper grid — a math page belongs on graph paper */
+  background-image:
+    linear-gradient(var(--ms-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ms-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  min-height:100vh;
+}
+
+body.math-solver-page *{box-sizing:border-box;}
+
+/* Re-added from your integration, with --chat-border (undefined) swapped
+   for the real --border token so the rule actually renders. */
+body.math-solver-page .app-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px clamp(16px, 5vw, 40px);
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    backdrop-filter: none;
+}
+
+/* ---------------- Show/hide fix ----------------
+   .ms-empty-state and .ms-steps below both set display:flex, which beats
+   the browser's default [hidden]{display:none} rule (author styles always
+   win over the user-agent stylesheet, regardless of source order or
+   specificity). Without this, the empty state kept rendering behind the
+   solved steps even after JS set element.hidden = true. */
+body.math-solver-page .ms-empty-state[hidden],
+body.math-solver-page .ms-steps[hidden]{
+  display:none;
+}
+
+/* ---------------- Hero ---------------- */
+body.math-solver-page .ms-hero{
+  max-width:720px;
+  margin:0 auto;
+  padding:56px 24px 20px;
+  text-align:center;
+}
+body.math-solver-page .ms-eyebrow{
+  font-size:0.78rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--ms-accent);
+  font-weight:600;
+  margin:0 0 14px;
+}
+body.math-solver-page .ms-title{
+  font-family:var(--display-font);
+  font-weight:600;
+  font-size:clamp(2.2rem, 5vw, 3.1rem);
+  line-height:1.05;
+  margin:0 0 14px;
+  color:var(--ms-ink);
+}
+body.math-solver-page .ms-title em{
+  font-style:italic;
+  color:var(--ms-accent);
+}
+body.math-solver-page .ms-subtitle{
+  font-size:1rem;
+  line-height:1.6;
+  color:var(--ms-ink-soft);
+  margin:0 auto;
+  max-width:560px;
+}
+
+/* ---------------- Workspace grid ---------------- */
+body.math-solver-page .ms-workspace{
+  max-width:1180px;
+  margin:32px auto 80px;
+  padding:0 24px;
+  display:grid;
+  grid-template-columns:minmax(320px,420px) 1fr;
+  gap:24px;
+  align-items:start;
+}
+@media (max-width:900px){
+  body.math-solver-page .ms-workspace{grid-template-columns:1fr;}
+}
+
+body.math-solver-page .ms-panel{
+  background:var(--ms-paper);
+  border:1px solid var(--ms-line);
+  border-radius:var(--ms-radius);
+  padding:24px;
+  box-shadow:0 1px 2px rgba(23,22,28,0.03);
+}
+
+body.math-solver-page .ms-panel-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+body.math-solver-page .ms-panel-head h2{
+  font-family:var(--display-font);
+  font-weight:600;
+  font-style:italic;
+  font-size:1.15rem;
+  margin:0;
+  color:var(--ms-ink);
+}
+body.math-solver-page .ms-panel-hint{
+  font-size:0.78rem;
+  color:var(--ms-ink-soft);
+}
+
+/* ---------------- Topic chips ---------------- */
+body.math-solver-page .ms-chip-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:16px;
+}
+body.math-solver-page .ms-chip{
+  border:1px solid var(--ms-line);
+  background:transparent;
+  color:var(--ms-ink-soft);
+  padding:7px 14px;
+  border-radius:999px;
+  font-family:var(--body-font);
+  font-size:0.82rem;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+body.math-solver-page .ms-chip:hover{border-color:var(--ms-accent);color:var(--ms-ink);}
+body.math-solver-page .ms-chip.is-active{
+  background:var(--ms-accent);
+  border-color:var(--ms-accent);
+  color:#fff;
+}
+
+/* ---------------- Input ---------------- */
+body.math-solver-page .ms-input-wrap{
+  position:relative;
+  margin-bottom:14px;
+}
+body.math-solver-page textarea#msProblemInput{
+  width:100%;
+  resize:vertical;
+  min-height:104px;
+  border:1px solid var(--ms-line);
+  border-radius:10px;
+  padding:14px 16px;
+  font-family:var(--body-font);
+  font-size:0.98rem;
+  line-height:1.55;
+  color:var(--ms-ink);
+  background:#fff;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+body.math-solver-page textarea#msProblemInput:focus{
+  outline:none;
+  border-color:var(--ms-accent);
+  box-shadow:0 0 0 3px var(--ms-accent-soft);
+}
+body.math-solver-page .ms-input-preview{
+  margin-top:8px;
+  min-height:1px;
+  font-size:0.95rem;
+  color:var(--ms-accent);
+}
+body.math-solver-page .ms-input-preview:empty{display:none;}
+
+body.math-solver-page .ms-example-row{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:20px;
+}
+body.math-solver-page .ms-example-label{
+  font-size:0.78rem;
+  color:var(--ms-ink-soft);
+  margin-right:2px;
+}
+body.math-solver-page .ms-example-chip{
+  border:1px dashed var(--ms-line);
+  background:var(--ms-accent-soft);
+  color:var(--ms-accent);
+  padding:5px 11px;
+  border-radius:8px;
+  font-size:0.78rem;
+  font-family:var(--body-font);
+  cursor:pointer;
+  transition:background .15s ease;
+}
+body.math-solver-page .ms-example-chip:hover{background:#e2ddfc;}
+
+/* ---------------- Actions ---------------- */
+body.math-solver-page .ms-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+}
+body.math-solver-page .ms-btn{
+  font-family:var(--body-font);
+  font-size:0.9rem;
+  font-weight:600;
+  padding:11px 22px;
+  border-radius:9px;
+  border:1px solid transparent;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:transform .12s ease, background .15s ease, box-shadow .15s ease;
+}
+body.math-solver-page .ms-btn:active{transform:scale(0.97);}
+body.math-solver-page .ms-btn-ghost{
+  background:transparent;
+  border-color:var(--ms-line);
+  color:var(--ms-ink-soft);
+}
+body.math-solver-page .ms-btn-ghost:hover{border-color:var(--ms-ink-soft);color:var(--ms-ink);}
+body.math-solver-page .ms-btn-primary{
+  background:var(--ms-accent);
+  color:#fff;
+  box-shadow:0 2px 10px rgba(68,56,229,0.28);
+}
+body.math-solver-page .ms-btn-primary:hover{box-shadow:0 4px 14px rgba(68,56,229,0.36);}
+body.math-solver-page .ms-btn-primary:disabled{opacity:0.7;cursor:default;}
+
+body.math-solver-page .ms-btn-spinner{
+  width:15px;height:15px;
+  display:none;
+  animation:ms-spin .8s linear infinite;
+}
+body.math-solver-page .ms-btn-spinner circle{
+  fill:none;stroke:#fff;stroke-width:3;
+  stroke-dasharray:40;stroke-dashoffset:10;
+  stroke-linecap:round;
+}
+body.math-solver-page .ms-btn-primary.is-loading .ms-btn-spinner{display:inline-block;}
+body.math-solver-page .ms-btn-primary.is-loading .ms-btn-label{display:none;}
+@keyframes ms-spin{to{transform:rotate(360deg);}}
+
+/* ---------------- Solution panel ---------------- */
+body.math-solver-page .ms-solution-panel{
+  min-height:420px;
+  display:flex;
+  flex-direction:column;
+}
+body.math-solver-page .ms-copy-btn{
+  border:1px solid var(--ms-line);
+  background:transparent;
+  color:var(--ms-ink-soft);
+  font-size:0.78rem;
+  font-family:var(--body-font);
+  padding:6px 12px;
+  border-radius:7px;
+  cursor:pointer;
+}
+body.math-solver-page .ms-copy-btn:hover{border-color:var(--ms-accent);color:var(--ms-accent);}
+body.math-solver-page .ms-copy-btn.is-copied{border-color:#2f9e5b;color:#2f9e5b;}
+
+body.math-solver-page .ms-solution-scroll{flex:1;}
+
+body.math-solver-page .ms-empty-state{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  height:100%;
+  min-height:320px;
+  color:var(--ms-ink-soft);
+  padding:20px;
+}
+body.math-solver-page .ms-empty-icon{
+  width:48px;height:48px;
+  color:var(--ms-line);
+  margin-bottom:14px;
+}
+body.math-solver-page .ms-empty-state p{
+  font-size:0.92rem;
+  max-width:260px;
+  margin:0;
+}
+
+/* ---------------- Steps (notebook reveal) ---------------- */
+body.math-solver-page .ms-steps{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+body.math-solver-page .ms-step{
+  position:relative;
+  padding:16px 18px 16px 52px;
+  border-left:2px solid var(--ms-line);
+  margin-left:15px;
+  opacity:0;
+  transform:translateY(8px);
+  animation:ms-step-in .45s ease forwards;
+}
+body.math-solver-page .ms-step:last-child{border-left-color:transparent;}
+body.math-solver-page .ms-step-number{
+  position:absolute;
+  left:-16px;
+  top:14px;
+  width:32px;height:32px;
+  border-radius:50%;
+  background:var(--ms-accent-soft);
+  color:var(--ms-accent);
+  font-family:var(--display-font);
+  font-weight:600;
+  font-size:0.92rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+body.math-solver-page .ms-step-title{
+  font-weight:600;
+  font-size:0.92rem;
+  color:var(--ms-ink);
+  margin:0 0 6px;
+}
+body.math-solver-page .ms-step-body{
+  font-size:0.92rem;
+  line-height:1.65;
+  color:var(--ms-ink-soft);
+}
+body.math-solver-page .ms-step-math{
+  margin-top:8px;
+  font-size:1.02rem;
+  color:var(--ms-ink);
+}
+@keyframes ms-step-in{
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ---------------- Answer card ---------------- */
+body.math-solver-page .ms-answer-card{
+  margin:20px 0 4px 15px;
+  background:linear-gradient(135deg, var(--ms-gold) 0%, #c78f37 100%);
+  border-radius:12px;
+  padding:20px 22px;
+  color:#2b2109;
+  opacity:0;
+  transform:translateY(8px);
+  animation:ms-step-in .45s ease forwards;
+}
+body.math-solver-page .ms-answer-label{
+  display:block;
+  font-size:0.72rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  opacity:0.68;
+  margin-bottom:6px;
+}
+body.math-solver-page .ms-answer-value{
+  font-family:var(--display-font);
+  font-size:1.35rem;
+  font-weight:600;
+}
+body.math-solver-page .ms-answer-value .katex{color:#2b2109;}
+
+/* ---------------- Error state ---------------- */
+body.math-solver-page .ms-error{
+  border:1px solid #f0b3ab;
+  background:#fdf2f0;
+  color:#a53d2c;
+  border-radius:10px;
+  padding:14px 16px;
+  font-size:0.88rem;
+  margin-left:15px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  body.math-solver-page .ms-step,
+  body.math-solver-page .ms-answer-card{
+    animation:none;
+    opacity:1;
+    transform:none;
+  }
+}
+
+@media (max-width:480px){
+  body.math-solver-page .ms-panel{padding:18px;}
+  body.math-solver-page .ms-workspace{padding:0 16px;}
+}

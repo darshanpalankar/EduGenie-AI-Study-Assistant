@@ -4,9 +4,10 @@
   collides with other pages' styles.
 ======================================*/
 
-/* Poppins is only loaded for this page via <link> in home template,
-   but @import here too in case style.css is cached before the link tag. */
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sekuya&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
 /* Override the AI Chat page's global, unscoped body rules
    (display:flex, height:100%, min-height:100vh) which otherwise
@@ -521,78 +522,72 @@ html {
     color: var(--home-primary);
 }
 
-.home-page .feature-marquee {
+.home-page .feature-wheel {
+    position: relative;
     margin-top: 70px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    height: 460px;
+    perspective: 1500px;
+    perspective-origin: 50% 50%;
+}
+
+.home-page .feature-wheel-stage {
+    position: relative;
     width: 100%;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-    scrollbar-width: none;
+    height: 100%;
+    transform-style: preserve-3d;
+    outline: none;
 }
 
-.home-page .feature-marquee::-webkit-scrollbar {
-    display: none;
+/* Fade the far edges of the wheel into the section background so cards
+   spinning toward ±2 don't hard-clip against the container edge. */
+.home-page .feature-wheel::before,
+.home-page .feature-wheel::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 12%;
+    z-index: 6;
+    pointer-events: none;
 }
 
-.home-page .feature-track {
-    display: flex;
-    gap: 30px;
-    width: max-content;
-    animation: home-feature-marquee 26s linear infinite;
+.home-page .feature-wheel::before {
+    left: 0;
+    background: linear-gradient(90deg, #f8fbff, transparent);
 }
 
-.home-page .feature-marquee:hover .feature-track,
-.home-page .feature-marquee:focus-within .feature-track {
-    animation-play-state: paused;
-}
-
-.home-page .feature-track[data-static="true"] {
-    animation: none;
-}
-
-@keyframes home-feature-marquee {
-    from {
-        transform: translateX(0);
-    }
-
-    to {
-        transform: translateX(-50%);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .home-page .feature-track {
-        animation: none;
-    }
+.home-page .feature-wheel::after {
+    right: 0;
+    background: linear-gradient(270deg, #f8fbff, transparent);
 }
 
 .home-page .feature-card {
-    flex: 0 0 300px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 300px;
     background: #ffffff;
     border-radius: 24px;
     padding: 40px 30px;
     border: 1px solid #edf2f7;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .05);
-    transition: all .35s ease;
     text-align: left;
-    position: relative;
-    overflow: hidden;
     display: block;
-    animation: homeFadeUp .8s ease both;
+    cursor: pointer;
+    backface-visibility: hidden;
+    transform: translate(-50%, -50%) translate3d(var(--wx, 0px), 0px, var(--wz, 0px)) rotateY(var(--wr, 0deg)) scale(var(--ws, 1));
+    opacity: var(--wo, 1);
+    z-index: var(--wzi, 1);
+    transition: transform .7s cubic-bezier(.22, .9, .3, 1), opacity .6s ease, box-shadow .35s ease;
 }
 
-.home-page .feature-card:nth-child(2) {
-    animation-delay: .1s;
+.home-page .feature-card.is-active {
+    box-shadow: 0 30px 55px rgba(37, 99, 235, .18);
+    cursor: pointer;
 }
 
-.home-page .feature-card:nth-child(3) {
-    animation-delay: .2s;
-}
-
-.home-page .feature-card:nth-child(4) {
-    animation-delay: .3s;
+.home-page .feature-card:not(.is-active):hover {
+    box-shadow: 0 20px 40px rgba(37, 99, 235, .14);
 }
 
 .home-page .feature-card::before {
@@ -608,12 +603,7 @@ html {
     transition: .35s;
 }
 
-.home-page .feature-card:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 25px 45px rgba(37, 99, 235, .12);
-}
-
-.home-page .feature-card:hover::before {
+.home-page .feature-card.is-active::before {
     transform: scaleX(1);
 }
 
@@ -631,7 +621,7 @@ html {
     transition: .35s;
 }
 
-.home-page .feature-card:hover .icon {
+.home-page .feature-card.is-active .icon {
     background: var(--home-primary);
     color: #ffffff;
     transform: rotate(-8deg) scale(1.08);
@@ -646,6 +636,75 @@ html {
     font-size: 15px;
     line-height: 1.8;
     color: var(--home-text-light);
+}
+
+/* Wheel nav arrows */
+
+.home-page .wheel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--home-border);
+    background: #ffffff;
+    color: var(--home-primary);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .08);
+    transition: .3s;
+}
+
+.home-page .wheel-nav:hover {
+    background: var(--home-primary);
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.08);
+}
+
+.home-page .wheel-prev {
+    left: 0;
+}
+
+.home-page .wheel-next {
+    right: 0;
+}
+
+/* Wheel dot indicators */
+
+.home-page .feature-wheel-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.home-page .feature-wheel-dots .wheel-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: none;
+    background: var(--home-border);
+    cursor: pointer;
+    padding: 0;
+    transition: .3s;
+}
+
+.home-page .feature-wheel-dots .wheel-dot.active {
+    background: var(--home-primary);
+    width: 26px;
+    border-radius: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-page .feature-card {
+        transition: opacity .3s ease;
+    }
 }
 
 @keyframes homeFadeUp {
@@ -907,8 +966,8 @@ html {
 
 .home-page .about-video-label {
     margin-left: 10px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--home-text-light);
 }
 
@@ -994,7 +1053,7 @@ html {
 }
 
 .home-page .mock-welcome-robot {
-    width: 74px;
+    width: 205px;
     height: auto;
     margin-bottom: 6px;
     animation: homeFloatRobot 4s ease-in-out infinite;
@@ -1003,8 +1062,8 @@ html {
 .home-page .mock-welcome-title {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-weight: 500;
-    font-size: 21px;
+    font-weight: 600;
+    font-size: 25px;
     color: #17171a;
 }
 
@@ -1050,6 +1109,7 @@ html {
 }
 
 .home-page .mock-row-reply {
+    margin-top: -65px;
     justify-content: flex-start;
     animation: mockReplyStage 10s ease infinite;
 }
@@ -1499,9 +1559,19 @@ html {
         gap: 25px;
     }
 
+    .home-page .feature-wheel {
+        height: 400px;
+    }
+
     .home-page .feature-card {
-        flex-basis: 260px;
-        width: 260px;
+        width: 250px;
+        padding: 32px 24px;
+    }
+
+    .home-page .wheel-nav {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
     }
 
     .home-page .steps-grid {
@@ -1568,7 +1638,18 @@ html {
         display: none;
     }
 
+    .home-page .feature-wheel {
+        height: 360px;
+    }
+
     .home-page .feature-card {
-        padding: 30px 22px;
+        width: 220px;
+        padding: 26px 20px;
+    }
+
+    .home-page .wheel-nav {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
     }
 }

@@ -153,7 +153,7 @@
 
                 <div class="circle"></div>
 
-                <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt="EduGenie Robot">
+                <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt="EduGenie-Robot">
 
                 <!-- Floating Icons -->
 
@@ -208,9 +208,13 @@
 
             </p>
 
-            <div class="feature-marquee">
+            <div class="feature-wheel" id="featureWheel">
 
-                <div class="feature-track" id="featureTrack">
+                <button type="button" class="wheel-nav wheel-prev" id="featureWheelPrev" aria-label="Previous feature">
+                    <i class="ri-arrow-left-s-line"></i>
+                </button>
+
+                <div class="feature-wheel-stage" id="featureWheelStage">
 
                     <!-- Card 1: AI Chat -->
 
@@ -296,9 +300,36 @@
 
                     </a>
 
+                    <!-- Card 5: Maths Solver -->
+
+                    <a href="/math-solver" class="feature-card">
+
+                        <div class="icon">
+
+                            <i class="ri-calculator-line"></i>
+
+                        </div>
+
+                        <h3>Maths Solver</h3>
+
+                        <p>
+
+                            Ask questions of mathematics instantly and receive
+                            intelligent explanations anytime.
+
+                        </p>
+
+                    </a>
+
                 </div>
 
+                <button type="button" class="wheel-nav wheel-next" id="featureWheelNext" aria-label="Next feature">
+                    <i class="ri-arrow-right-s-line"></i>
+                </button>
+
             </div>
+
+            <div class="feature-wheel-dots" id="featureWheelDots"></div>
 
         </div>
 
@@ -455,7 +486,7 @@
                             <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt=""
                                 class="mock-welcome-robot">
                             <p class="mock-welcome-title">Hey, Welcome back.</p>
-                            <p class="mock-welcome-sub">Ask me anything — from tricky concepts to quick explanations.
+                            <p class="mock-welcome-sub">Ask me anything .
                             </p>
                         </div>
 

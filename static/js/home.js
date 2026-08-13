@@ -11,40 +11,237 @@ if (homeMenuBtn && homeNavbar) {
   });
 }
 
-/* ---------- Features marquee (continuous horizontal auto-scroll) ---------- */
+/* ---------- Features wheel carousel ---------- */
+/* Cards sit in 3D space around a shallow "wheel": the active card faces
+   forward at full size, and cards fall away to either side, rotated and
+   scaled down, like spokes on a wheel. Each card's position is driven by
+   CSS custom properties (--wx/--wz/--wr/--ws/--wo/--wzi) that get
+   recalculated whenever the active index or viewport width changes. */
 
-const featureTrackEl = document.getElementById("featureTrack");
+const featureWheelEl = document.getElementById("featureWheel");
+const featureWheelStageEl = document.getElementById("featureWheelStage");
 
-if (featureTrackEl) {
-  const MARQUEE_SPEED_PX_PER_SEC = 45;
+if (featureWheelEl && featureWheelStageEl) {
+  const wheelCards = Array.from(featureWheelStageEl.children);
+  const cardCount = wheelCards.length;
 
-  const prefersReducedMotionForMarquee = window.matchMedia(
+  const wheelPrevBtn = document.getElementById("featureWheelPrev");
+  const wheelNextBtn = document.getElementById("featureWheelNext");
+  const wheelDotsEl = document.getElementById("featureWheelDots");
+
+  const AUTOPLAY_DELAY_MS = 1200;
+  const TRANSITION_LOCK_MS = 750;
+
+  const prefersReducedMotionForWheel = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
 
-  if (!prefersReducedMotionForMarquee) {
-    // Clone the original cards once so the track holds two identical
-    // sets back-to-back; animating from translateX(0) to translateX(-50%)
-    // then loops seamlessly, since the second set picks up exactly
-    // where the first one started.
-    const originalCards = Array.from(featureTrackEl.children);
-    originalCards.forEach((card) => {
-      const clone = card.cloneNode(true);
-      clone.setAttribute("aria-hidden", "true");
-      clone.setAttribute("tabindex", "-1");
-      featureTrackEl.appendChild(clone);
+  let currentIndex = 0;
+  let autoplayTimerId = null;
+  let isTransitioning = false;
+
+  // Build one dot indicator per card.
+  const dotEls = wheelCards.map((_, i) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "wheel-dot";
+    dot.setAttribute("aria-label", `Go to feature ${i + 1}`);
+    dot.addEventListener("click", () => {
+      goToIndex(i);
+      restartAutoplay();
+    });
+    wheelDotsEl?.appendChild(dot);
+    return dot;
+  });
+
+  // Returns the CSS offsets to apply for a card at `offset` steps away
+  // from the active card (0 = front and center, ±1/±2 = spoke positions
+  // to either side). Sized down for narrower viewports.
+  function getOffsetStyle(offset) {
+    const width = window.innerWidth;
+
+    const FRONT = { x: 0, z: 0, r: 0, s: 1, o: 1, zi: 5 };
+
+    if (offset === 0) return FRONT;
+
+    if (width <= 480) {
+      // Only the active card is visible; neighbors wait just off-frame.
+      const side = offset > 0 ? 1 : -1;
+      return { x: side * 140, z: -160, r: side * -30, s: 0.7, o: 0, zi: 1 };
+    }
+
+    if (width <= 768) {
+      if (Math.abs(offset) === 1) {
+        const side = offset > 0 ? 1 : -1;
+        return { x: side * 190, z: -150, r: side * -34, s: 0.76, o: 0.5, zi: 4 };
+      }
+      const side = offset > 0 ? 1 : -1;
+      return { x: side * 190, z: -260, r: side * -34, s: 0.5, o: 0, zi: 1 };
+    }
+
+    if (Math.abs(offset) === 1) {
+      const side = offset > 0 ? 1 : -1;
+      return { x: side * 270, z: -170, r: side * -38, s: 0.82, o: 0.65, zi: 4 };
+    }
+    if (Math.abs(offset) === 2) {
+      const side = offset > 0 ? 1 : -1;
+      return { x: side * 480, z: -330, r: side * -50, s: 0.62, o: 0.28, zi: 3 };
+    }
+    const side = offset > 0 ? 1 : -1;
+    return { x: side * 640, z: -460, r: side * -55, s: 0.5, o: 0, zi: 1 };
+  }
+
+  // Shortest signed distance from the active card, so cards take the
+  // nearer path around the wheel when wrapping past the last/first card.
+  function relativeOffset(index) {
+    let diff = index - currentIndex;
+    if (diff > cardCount / 2) diff -= cardCount;
+    if (diff < -cardCount / 2) diff += cardCount;
+    return diff;
+  }
+
+  function render() {
+    wheelCards.forEach((card, i) => {
+      const offset = relativeOffset(i);
+      const style = getOffsetStyle(offset);
+
+      card.style.setProperty("--wx", `${style.x}px`);
+      card.style.setProperty("--wz", `${style.z}px`);
+      card.style.setProperty("--wr", `${style.r}deg`);
+      card.style.setProperty("--ws", style.s);
+      card.style.setProperty("--wo", style.o);
+      card.style.setProperty("--wzi", style.zi);
+
+      const isActive = offset === 0;
+      card.classList.toggle("is-active", isActive);
+      card.setAttribute("aria-hidden", isActive ? "false" : "true");
+      card.tabIndex = isActive ? 0 : -1;
+      card.style.pointerEvents = style.o > 0 || isActive ? "auto" : "none";
     });
 
-    // Base the animation duration on the actual rendered width of one
-    // set of cards, so the drift speed stays consistent even if cards
-    // are added/removed or resize at a breakpoint, rather than a fixed
-    // duration that would speed up or slow down as content changes.
-    const setWidth = featureTrackEl.scrollWidth / 2;
-    const duration = setWidth / MARQUEE_SPEED_PX_PER_SEC;
-    featureTrackEl.style.animationDuration = `${duration}s`;
-  } else {
-    featureTrackEl.dataset.static = "true";
+    dotEls.forEach((dot, i) => dot.classList.toggle("active", i === currentIndex));
   }
+
+  function goToIndex(index) {
+    currentIndex = ((index % cardCount) + cardCount) % cardCount;
+    isTransitioning = true;
+    render();
+    window.clearTimeout(goToIndex._lockTimer);
+    goToIndex._lockTimer = window.setTimeout(() => {
+      isTransitioning = false;
+    }, TRANSITION_LOCK_MS);
+  }
+
+  function goToNext() {
+    goToIndex(currentIndex + 1);
+  }
+
+  function goToPrev() {
+    goToIndex(currentIndex - 1);
+  }
+
+  function startAutoplay() {
+    if (prefersReducedMotionForWheel) return;
+    stopAutoplay();
+    autoplayTimerId = window.setInterval(goToNext, AUTOPLAY_DELAY_MS);
+  }
+
+  function stopAutoplay() {
+    if (autoplayTimerId) {
+      window.clearInterval(autoplayTimerId);
+      autoplayTimerId = null;
+    }
+  }
+
+  function restartAutoplay() {
+    stopAutoplay();
+    startAutoplay();
+  }
+
+  // Clicking a side card brings it to the front instead of following its
+  // link; clicking the already-active card follows the link as normal.
+  wheelCards.forEach((card, i) => {
+    card.addEventListener("click", (e) => {
+      if (relativeOffset(i) !== 0) {
+        e.preventDefault();
+        if (!isTransitioning) {
+          goToIndex(i);
+          restartAutoplay();
+        }
+      }
+    });
+  });
+
+  wheelPrevBtn?.addEventListener("click", () => {
+    if (isTransitioning) return;
+    goToPrev();
+    restartAutoplay();
+  });
+
+  wheelNextBtn?.addEventListener("click", () => {
+    if (isTransitioning) return;
+    goToNext();
+    restartAutoplay();
+  });
+
+  // Keyboard support when the wheel (or a card inside it) has focus.
+  featureWheelEl.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goToNext();
+      restartAutoplay();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goToPrev();
+      restartAutoplay();
+    }
+  });
+
+  // Pause on hover/focus so people can read the front card in peace.
+  featureWheelEl.addEventListener("mouseenter", stopAutoplay);
+  featureWheelEl.addEventListener("mouseleave", startAutoplay);
+  featureWheelEl.addEventListener("focusin", stopAutoplay);
+  featureWheelEl.addEventListener("focusout", startAutoplay);
+
+  // Touch swipe support.
+  let touchStartX = 0;
+  let isSwiping = false;
+
+  featureWheelEl.addEventListener(
+    "touchstart",
+    (e) => {
+      touchStartX = e.touches[0].clientX;
+      isSwiping = true;
+      stopAutoplay();
+    },
+    { passive: true }
+  );
+
+  featureWheelEl.addEventListener(
+    "touchend",
+    (e) => {
+      if (!isSwiping) return;
+      isSwiping = false;
+      const deltaX = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(deltaX) > 40) {
+        if (deltaX < 0) goToNext();
+        else goToPrev();
+      }
+      startAutoplay();
+    },
+    { passive: true }
+  );
+
+  // Re-run the offset math on resize (debounced) so breakpoint changes
+  // reposition the spokes instead of leaving stale desktop offsets.
+  let resizeTimerId = null;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(resizeTimerId);
+    resizeTimerId = window.setTimeout(render, 150);
+  });
+
+  render();
+  startAutoplay();
 }
 
 /* ---------- Smooth-scroll to in-page sections (e.g. #features) ---------- */
