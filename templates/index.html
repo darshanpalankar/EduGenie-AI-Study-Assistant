@@ -408,38 +408,153 @@
 
                 <div class="about-circle"></div>
 
-                <div class="testimonial-card" data-reveal="scale" data-reveal-delay="200">
+                <div class="testimonial-widget" data-reveal="scale" data-reveal-delay="200">
 
-                    <span class="testimonial-quote-icon">
-                        <img src="{{ url_for('static', filename='images/quote-illustration.svg') }}" alt="">
-                    </span>
+                    <div class="testimonial-stack" id="testimonialStack">
 
-                    <div class="testimonial-stars">
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                    </div>
+                        <div class="testimonial-card">
 
-                    <p class="testimonial-text">
+                            <span class="testimonial-quote-icon">
+                                <img src="{{ url_for('static', filename='images/quote-illustration.svg') }}" alt="">
+                            </span>
 
-                        EduGenie helped me finish my coding assignments
-                        twice as fast. The AI Chat explains concepts
-                        better than my textbook ever did.
+                            <div class="testimonial-stars">
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                            </div>
 
-                    </p>
+                            <p class="testimonial-text">
 
-                    <div class="testimonial-author">
+                                EduGenie helped me finish my coding assignments
+                                twice as fast. The AI Chat explains concepts
+                                better than my textbook ever did.
 
-                        <span class="testimonial-avatar">PK</span>
+                            </p>
 
-                        <div>
-                            <h4>Priyesh Kondvilkar</h4>
-                            <span>Computer Science Student</span>
+                            <div class="testimonial-author">
+
+                                <span class="testimonial-avatar">PK</span>
+
+                                <div>
+                                    <h4>Priyesh Kondvilkar</h4>
+                                    <span>Computer Science Student</span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="testimonial-card">
+
+                            <span class="testimonial-quote-icon">
+                                <img src="{{ url_for('static', filename='images/quote-illustration.svg') }}" alt="">
+                            </span>
+
+                            <div class="testimonial-stars">
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                            </div>
+
+                            <p class="testimonial-text">
+
+                                The Quiz Generator turned my messy notes into
+                                a full practice test in seconds. My exam
+                                scores actually went up this semester.
+
+                            </p>
+
+                            <div class="testimonial-author">
+
+                                <span class="testimonial-avatar">SP</span>
+
+                                <div>
+                                    <h4>Sneha Patil</h4>
+                                    <span>Engineering Student</span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="testimonial-card">
+
+                            <span class="testimonial-quote-icon">
+                                <img src="{{ url_for('static', filename='images/quote-illustration.svg') }}" alt="">
+                            </span>
+
+                            <div class="testimonial-stars">
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-half-fill"></i>
+                            </div>
+
+                            <p class="testimonial-text">
+
+                                Math Solver breaks every problem into clear
+                                steps, so I finally understand the "why"
+                                behind the answer, not just the answer.
+
+                            </p>
+
+                            <div class="testimonial-author">
+
+                                <span class="testimonial-avatar">AM</span>
+
+                                <div>
+                                    <h4>Arjun Mehta</h4>
+                                    <span>Data Science Student</span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="testimonial-card">
+
+                            <span class="testimonial-quote-icon">
+                                <img src="{{ url_for('static', filename='images/quote-illustration.svg') }}" alt="">
+                            </span>
+
+                            <div class="testimonial-stars">
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                                <i class="ri-star-fill"></i>
+                            </div>
+
+                            <p class="testimonial-text">
+
+                                I turn messy lecture recordings into clean,
+                                structured notes in minutes with the Notes
+                                Generator. Huge time saver every week.
+
+                            </p>
+
+                            <div class="testimonial-author">
+
+                                <span class="testimonial-avatar">AS</span>
+
+                                <div>
+                                    <h4>Ananya Sharma</h4>
+                                    <span>Working Professional</span>
+                                </div>
+
+                            </div>
+
                         </div>
 
                     </div>
+
+                    <div class="testimonial-dots" id="testimonialDots"></div>
 
                 </div>
 
@@ -469,16 +584,6 @@
                 </div>
 
                 <div class="about-video-body">
-
-                    <!--
-                        Drop-in replacement once real footage exists — just
-                        swap the .about-video-mock block below for:
-
-                        <video class="about-video-el" autoplay muted loop playsinline
-                            poster="{{ url_for('static', filename='images/about-video-poster.jpg') }}">
-                            <source src="{{ url_for('static', filename='videos/about-demo.mp4') }}" type="video/mp4">
-                        </video>
-                    -->
 
                     <div class="about-video-mock">
 

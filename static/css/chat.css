@@ -2,6 +2,8 @@
    Chat Interface (EduGenie)
    Scoped under body.chat-page
 ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
 
 body.chat-page {
     --chat-bg: #FAFAF8;
@@ -323,8 +325,8 @@ body.chat-page .bubble li:last-child {
 }
 
 body.chat-page .bubble strong {
-    color: var(--chat-accent);
-    font-weight: 500;
+    color: var(--chat-ink);
+    font-weight: 600;
 }
 
 body.chat-page .msg.user .bubble strong {
@@ -345,22 +347,304 @@ body.chat-page .bubble hr {
 }
 
 body.chat-page .bubble code {
-    background: var(--chat-accent-soft);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-family: 'SFMono-Regular', Consolas, monospace;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
     color: var(--chat-accent);
 }
 
 body.chat-page .msg.user .bubble code {
-    background: rgba(255, 255, 255, 0.18);
+    background: none;
     color: #fff;
 }
 
 body.chat-page .bubble a {
     color: var(--chat-accent);
     text-decoration: underline;
+}
+
+/* ---------- Tables ---------- */
+
+body.chat-page .bubble .table-wrap {
+    overflow-x: auto;
+    margin: 10px 0;
+    border: 1px solid var(--chat-border);
+    border-radius: 5px;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.chat-page .bubble table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 460px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13.5px;
+}
+
+body.chat-page .bubble thead {
+    background: var(--chat-accent-soft);
+}
+
+body.chat-page .bubble th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--chat-ink);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--chat-border);
+    border-right: 1px solid var(--chat-border);
+    white-space: nowrap;
+}
+
+body.chat-page .bubble th:last-child {
+    border-right: none;
+}
+
+body.chat-page .bubble td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--chat-border);
+    border-right: 1px solid var(--chat-border);
+    color: var(--chat-ink);
+    font-weight: 400;
+    vertical-align: top;
+}
+
+body.chat-page .bubble td:last-child {
+    border-right: none;
+}
+
+body.chat-page .bubble tbody tr:last-child td {
+    border-bottom: none;
+}
+
+body.chat-page .bubble tbody tr:hover {
+    background: rgba(68, 56, 229, 0.04);
+}
+
+/* ---------- Code blocks ---------- */
+
+body.chat-page .bubble .code-block {
+    margin: 10px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--chat-border);
+    background: #1E1E24;
+}
+
+body.chat-page .bubble .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    background: #26262E;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.chat-page .bubble .code-lang {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9C9AA8;
+}
+
+body.chat-page .bubble .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #C9C7D4;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+body.chat-page .bubble .copy-btn svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+body.chat-page .bubble .copy-btn:hover {
+    border-color: var(--chat-accent);
+    color: #fff;
+    background: rgba(68, 56, 229, 0.28);
+}
+
+body.chat-page .bubble .copy-btn.copied {
+    border-color: #3FB27F;
+    color: #6FE3AA;
+}
+
+body.chat-page .bubble .code-block pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.chat-page .bubble .code-block code {
+    background: none;
+    padding: 0;
+    color: #E7E6EE;
+    font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+body.chat-page .bubble .code-block code.hljs {
+    background: none;
+    padding: 0;
+}
+
+body.chat-page .bubble .expand-btn {
+    padding: 4px 8px;
+}
+
+/* ---------- Code side panel (view code full-size) ---------- */
+
+.code-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(23, 23, 26, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.code-panel-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.code-side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(620px, 92vw);
+    background: #1E1E24;
+    z-index: 1001;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
+}
+
+.code-side-panel.open {
+    transform: translateX(0);
+}
+
+.code-side-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: #26262E;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.code-side-panel-lang {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #9C9AA8;
+}
+
+.code-side-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.code-side-panel-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #C9C7D4;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    padding: 6px 11px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.code-side-panel-btn svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.code-side-panel-btn:hover {
+    border-color: var(--chat-accent);
+    color: #fff;
+    background: rgba(68, 56, 229, 0.28);
+}
+
+.code-side-panel-btn.copied {
+    border-color: #3FB27F;
+    color: #6FE3AA;
+}
+
+.code-side-panel-close {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.code-side-panel-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.code-side-panel-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px 22px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.code-side-panel-body pre {
+    margin: 0;
+}
+
+.code-side-panel-body code {
+    font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.75;
+    color: #E7E6EE;
+    white-space: pre;
+    background: none;
+}
+
+@media (max-width: 480px) {
+    .code-side-panel {
+        width: 100vw;
+    }
+
+    .code-side-panel-body {
+        padding: 16px;
+    }
 }
 
 body.chat-page .msg.thinking .bubble {
@@ -425,8 +709,8 @@ body.chat-page .composer input {
     border: none;
     color: var(--chat-ink);
     font-family: 'Poppins', sans-serif;
-    font-size: 14.5px;
-    font-weight: 300;
+    font-size: 14px;
+    font-weight: 400;
     padding: 6px 0;
     border-radius: 0;
     outline: none;
@@ -438,7 +722,7 @@ body.chat-page .composer input:focus {
 
 body.chat-page .composer input::placeholder {
     color: var(--chat-ink-faint);
-    font-weight: 300;
+    font-weight: 400;
 }
 
 body.chat-page .composer button {
@@ -477,9 +761,10 @@ body.chat-page .composer button:disabled {
 
 body.chat-page .composer-hint {
     text-align: center;
+    font-family: 'Poppins', sans-serif;
     font-size: 11px;
-    font-weight: 300;
-    color: var(--chat-ink-faint);
+    font-weight: 500;
+    color: rgb(38, 37, 37);
     margin-top: 12px;
 }
 
@@ -511,6 +796,20 @@ body.chat-page .error-text {
     body.chat-page .suggestion-chip {
         font-size: 12.5px;
         padding: 8px 13px;
+    }
+
+    body.chat-page .bubble table {
+        min-width: 380px;
+        font-size: 13px;
+    }
+
+    body.chat-page .bubble th,
+    body.chat-page .bubble td {
+        padding: 8px 10px;
+    }
+
+    body.chat-page .bubble .code-block pre {
+        padding: 12px;
     }
 }
 

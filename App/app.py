@@ -6,10 +6,15 @@ import threading
 import time
 import uuid
 import socket
+from types import SimpleNamespace
 
 import httpx
 from flask import Flask, render_template, request, jsonify, session
-from google import genai
+
+try:
+    from google import genai
+except ImportError:
+    genai = None  # only required when AI_PROVIDER=gemini
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("edugenie")
@@ -17,6 +22,20 @@ logger = logging.getLogger("edugenie")
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("google_genai").setLevel(logging.WARNING)
+
+# ---------------------------------------------------------------------------
+# AI provider switch
+#
+# AI_PROVIDER=gemini (default) -> uses Google Gemini via google-genai, same
+# as before.
+# AI_PROVIDER=ollama -> routes every generator class through Ollama Cloud
+# (https://ollama.com) using OLLAMA_API_KEY. Local Ollama is not used - this
+# always talks to the hosted cloud API, so no local install/pull is needed.
+# ---------------------------------------------------------------------------
+AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").strip().lower()
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com").rstrip("/")
+OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -61,7 +80,23 @@ AI_CHAT_SYSTEM_INSTRUCTION = (
     "Keep lists tight with no blank lines between list items. "
     "If the user asks for code as part of the conversation, you may include "
     "it in a fenced code block along with explanation, since this is a "
-    "chat context, not the dedicated Code Generator."
+    "chat context, not the dedicated Code Generator. "
+
+    "Match the length of your response to the question. Simple, factual, "
+    "or greeting-style questions get a short answer - a sentence or two, "
+    "or a short list at most. Reserve longer, multi-section answers for "
+    "questions that genuinely need step-by-step depth (e.g. 'explain X in "
+    "detail', 'walk me through Y'). Do not pad answers with restated "
+    "questions, extra examples, or a summary section unless it adds real "
+    "value. "
+
+    "Use a markdown table whenever the user asks for a difference, "
+    "comparison, or 'X vs Y' between two or more items (e.g. 'difference "
+    "between stack and queue', 'compare TCP and UDP'), or explicitly asks "
+    "for a table. Give the table with no extra bullet-point summary "
+    "underneath unless asked for one. For everything else - explanations, "
+    "definitions, how-to answers - use plain prose or a short bullet list "
+    "instead of a table."
 )
 
 # Used by the Code Generator page (/api/generate). Code-only, no prose.
@@ -151,7 +186,7 @@ def call_with_retry(func, *args, max_attempts=3, base_delay=1.0, **kwargs):
                 break
             wait = base_delay * (2 ** (attempt - 1))
             logger.warning(
-                "Transient error calling Gemini (attempt %s/%s): %s. Retrying in %.1fs.",
+                "Transient error calling API (attempt %s/%s): %s. Retrying in %.1fs.",
                 attempt, max_attempts, exc, wait,
             )
             time.sleep(wait)
@@ -213,11 +248,150 @@ def get_genai_client():
     if _genai_client is None:
         with _genai_client_lock:
             if _genai_client is None:
+                if genai is None:
+                    raise RuntimeError(
+                        "google-genai isn't installed. Run `pip install google-genai`, "
+                        "or set AI_PROVIDER=ollama to skip Gemini entirely."
+                    )
                 api_key = os.getenv("GENAI_API_KEY")
                 if not api_key:
                     raise RuntimeError("GENAI_API_KEY environment variable not set.")
                 _genai_client = genai.Client(api_key=api_key)
     return _genai_client
+
+
+def ollama_chat_request(model, messages, response_format=None, max_output_tokens=None):
+    """
+    POSTs to Ollama's /api/chat endpoint (non-streaming) and returns the
+    assistant's reply text. Uses the shared httpx client behavior so
+    connection errors (server not running, wrong OLLAMA_HOST, etc.) surface
+    as httpx exceptions - the same RETRYABLE_EXCEPTIONS tuple that already
+    covers Gemini's transient errors, so call_with_retry works unchanged.
+
+    """
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+    }
+    if response_format == "json":
+        payload["format"] = "json"
+
+    options = {}
+    if max_output_tokens:
+        options["num_predict"] = max_output_tokens
+    if options:
+        payload["options"] = options
+
+    headers = {}
+    if OLLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
+
+    response = httpx.post(
+        f"{OLLAMA_HOST}/api/chat",
+        json=payload,
+        headers=headers,
+        timeout=OLLAMA_TIMEOUT,
+    )
+    response.raise_for_status()
+    data = response.json()
+    return ((data.get("message") or {}).get("content") or "").strip()
+
+
+class _OllamaChatSession:
+    """
+    Mimics the surface of a google-genai chat session (client.chats.create())
+    that EduGenie actually uses - just .send_message(text) -> obj with .text.
+    History is kept in memory as a plain messages list and replayed on every
+    call, since Ollama's /api/chat is stateless per-request.
+    """
+
+    def __init__(self, model, system_instruction=None):
+        self.model = model
+        self.history = []
+        if system_instruction:
+            self.history.append({"role": "system", "content": system_instruction})
+
+    def send_message(self, message):
+        self.history.append({"role": "user", "content": message})
+        content = ollama_chat_request(self.model, self.history)
+        self.history.append({"role": "assistant", "content": content})
+        return SimpleNamespace(text=content)
+
+
+class _OllamaChats:
+    def create(self, model, config=None):
+        config = config or {}
+        return _OllamaChatSession(model, config.get("system_instruction"))
+
+
+class _OllamaModels:
+    def generate_content(self, model, contents, config=None):
+        config = config or {}
+        messages = []
+        if config.get("system_instruction"):
+            messages.append({"role": "system", "content": config["system_instruction"]})
+        messages.append({"role": "user", "content": contents})
+
+        response_format = "json" if config.get("response_mime_type") == "application/json" else None
+        content = ollama_chat_request(
+            model,
+            messages,
+            response_format=response_format,
+            max_output_tokens=config.get("max_output_tokens"),
+        )
+        return SimpleNamespace(text=content)
+
+
+class OllamaClient:
+    """
+    Drop-in stand-in for genai.Client that speaks to a local Ollama server.
+    Mirrors only the two entry points EduGenie's generator classes use -
+    client.chats.create(...) and client.models.generate_content(...) - so
+    every generator class works against either backend unchanged.
+    """
+
+    def __init__(self):
+        self.chats = _OllamaChats()
+        self.models = _OllamaModels()
+
+
+_ollama_client = None
+_ollama_client_lock = threading.Lock()
+
+
+def get_ollama_client():
+    """
+    Same singleton pattern as get_genai_client() - built once, reused for
+    every request, double-checked locking against concurrent first use.
+    Requires OLLAMA_API_KEY since this always targets Ollama Cloud
+    (https://ollama.com), not a local server.
+
+    """
+    global _ollama_client
+    if _ollama_client is None:
+        with _ollama_client_lock:
+            if _ollama_client is None:
+                if not OLLAMA_API_KEY:
+                    raise RuntimeError(
+                        "OLLAMA_API_KEY environment variable not set. "
+                        "Create a key at https://ollama.com/settings/keys."
+                    )
+                _ollama_client = OllamaClient()
+    return _ollama_client
+
+
+def get_ai_client():
+    """
+    Single entry point every generator class's get_client() should call.
+    Routes to Gemini or Ollama based on AI_PROVIDER, so swapping providers
+    is a one-line env var change and nothing else in the file needs to know
+    which backend is actually in use.
+
+    """
+    if AI_PROVIDER == "ollama":
+        return get_ollama_client()
+    return get_genai_client()
 
 
 def parse_json_response(raw_text):
@@ -267,12 +441,18 @@ class AI_Chat:
     """
 
     MODEL = "gemini-3.5-flash-lite"
+    OLLAMA_MODEL = "gpt-oss:120b-cloud"
+
 
     def __init__(self):
         self.name = "EduGenie - AI Chat"
 
+    @property
+    def model_name(self):
+        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+
     def get_client(self):
-        return get_genai_client()
+        return get_ai_client()
 
     def _session_key(self):
         if "ai_chat_session_id" not in session:
@@ -287,8 +467,11 @@ class AI_Chat:
                 if session_id not in _ai_chats_:
                     client = self.get_client()
                     chat_obj = client.chats.create(
-                        model=self.MODEL,
-                        config={"system_instruction": AI_CHAT_SYSTEM_INSTRUCTION},
+                        model=self.model_name,
+                        config={
+                            "system_instruction": AI_CHAT_SYSTEM_INSTRUCTION,
+                            "max_output_tokens": 800,
+                        },
                     )
                     _ai_chats_[session_id] = {"client": client, "chat": chat_obj}
 
@@ -321,12 +504,17 @@ class CodeGenerator:
     """
 
     MODEL = "gemini-2.5-flash"
+    OLLAMA_MODEL = "qwen3-coder:480b-cloud"
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
 
+    @property
+    def model_name(self):
+        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+
     def get_client(self):
-        return get_genai_client()
+        return get_ai_client()
 
     def _session_key(self):
         if "code_session_id" not in session:
@@ -341,7 +529,7 @@ class CodeGenerator:
                 if session_id not in _code_chats_:
                     client = self.get_client()
                     chat_obj = client.chats.create(
-                        model=self.MODEL,
+                        model=self.model_name,
                         config={"system_instruction": CODE_GEN_SYSTEM_INSTRUCTION},
                     )
                     _code_chats_[session_id] = {"client": client, "chat": chat_obj}
@@ -372,6 +560,7 @@ class QuizzGenerator:
     """
 
     MODEL = "gemini-3.6-flash"
+    OLLAMA_MODEL = "gpt-oss:120b-cloud"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Quiz Generator. Given a topic, a difficulty level, "
@@ -385,8 +574,12 @@ class QuizzGenerator:
     def __init__(self):
         self.name = "EduGenie - Quizz Generator"
 
+    @property
+    def model_name(self):
+        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+
     def get_client(self):
-        return get_genai_client()
+        return get_ai_client()
 
     def generate(self, topic, num_questions=5, difficulty="medium"):
         client = self.get_client()
@@ -406,7 +599,7 @@ class QuizzGenerator:
         for attempt in range(1, 3):
             response = call_with_retry(
                 client.models.generate_content,
-                model=self.MODEL,
+                model=self.model_name,
                 contents=prompt if attempt == 1 else prompt + (
                     "\n\nYour previous response was not valid, complete JSON. "
                     "Respond again with ONLY the complete, valid JSON object - "
@@ -430,6 +623,7 @@ class NotesGenerator:
     """
 
     MODEL = "gemini-3.6-flash"
+    OLLAMA_MODEL = "gpt-oss:120b-cloud"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Notes Generator. Given a topic and a detail level, "
@@ -442,8 +636,12 @@ class NotesGenerator:
     def __init__(self):
         self.name = "EduGenie - Notes Generator"
 
+    @property
+    def model_name(self):
+        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+
     def get_client(self):
-        return get_genai_client()
+        return get_ai_client()
 
     def generate(self, topic, detail_level="medium"):
         client = self.get_client()
@@ -454,7 +652,7 @@ class NotesGenerator:
         )
         response = call_with_retry(
             client.models.generate_content,
-            model=self.MODEL,
+            model=self.model_name,
             contents=prompt,
             config={"system_instruction": self.SYSTEM_INSTRUCTION},
         )
@@ -469,6 +667,7 @@ class MCQsGenerator:
     """
 
     MODEL = "gemini-3.6-flash"
+    OLLAMA_MODEL = "gpt-oss:120b-cloud"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's MCQ Generator. Given a topic, a difficulty level, "
@@ -485,8 +684,12 @@ class MCQsGenerator:
     def __init__(self):
         self.name = "EduGenie - MCQs Generator"
 
+    @property
+    def model_name(self):
+        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+
     def get_client(self):
-        return get_genai_client()
+        return get_ai_client()
 
     def generate(self, topic, num_questions=5, difficulty="medium"):
         client = self.get_client()
@@ -507,7 +710,7 @@ class MCQsGenerator:
         for attempt in range(1, 3):
             response = call_with_retry(
                 client.models.generate_content,
-                model=self.MODEL,
+                model=self.model_name,
                 contents=prompt if attempt == 1 else prompt + (
                     "\n\nYour previous response was not valid, complete JSON. "
                     "Respond again with ONLY the complete, valid JSON object - "
@@ -532,14 +735,19 @@ class MathSolver:
     """
 
     MODEL = "gemini-3.6-flash"
+    OLLAMA_MODEL = "gpt-oss:120b-cloud"
 
     SYSTEM_INSTRUCTION = MATH_SOLVER_SYSTEM_INSTRUCTION
 
     def __init__(self):
         self.name = "EduGenie - Math Solver"
 
+    @property
+    def model_name(self):
+        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+
     def get_client(self):
-        return get_genai_client()
+        return get_ai_client()
 
     def solve(self, problem, topic="auto"):
         client = self.get_client()
@@ -558,7 +766,7 @@ class MathSolver:
         for attempt in range(1, 3):
             response = call_with_retry(
                 client.models.generate_content,
-                model=self.MODEL,
+                model=self.model_name,
                 contents=prompt if attempt == 1 else prompt + (
                     "\n\nYour previous response was not valid, complete JSON. "
                     "Respond again with ONLY the complete, valid JSON object - "
@@ -772,5 +980,9 @@ if __name__ == "__main__":
     print(f" * EduGenie running at: http://127.0.0.1:{port}")
     if lan_ip:
         print(f" * View on your phone (same Wi-Fi): http://{lan_ip}:{port}")
+    if AI_PROVIDER == "ollama":
+        print(f" * AI provider: Ollama Cloud ({OLLAMA_HOST})")
+    else:
+        print(" * AI provider: Gemini")
 
     app.run(host="0.0.0.0", port=port, debug=debug, threaded=True)

@@ -244,6 +244,114 @@ if (featureWheelEl && featureWheelStageEl) {
   startAutoplay();
 }
 
+/* ---------- Testimonial stack (auto-cycling cards) ---------- */
+/* A handful of testimonial cards sit stacked on top of one another. The
+   front card is fully visible; the next couple peek out behind it, offset
+   downward and scaled slightly smaller. Every few seconds the front card
+   is retired to the back of the stack and the next one animates forward,
+   mirroring the same offset-driven approach used for the features wheel. */
+
+const testimonialStackEl = document.getElementById("testimonialStack");
+const testimonialDotsEl = document.getElementById("testimonialDots");
+
+if (testimonialStackEl) {
+  const testimonialCards = Array.from(
+    testimonialStackEl.querySelectorAll(".testimonial-card")
+  );
+  const testimonialCount = testimonialCards.length;
+
+  const TESTIMONIAL_AUTOPLAY_MS = 4000;
+
+  const prefersReducedMotionForTestimonials = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  let activeTestimonialIndex = 0;
+  let testimonialTimerId = null;
+
+  // Only the first three stack positions get a distinct look; anything
+  // further back stays fully hidden until its turn comes around.
+  const STACK_POSITIONS = [
+    { y: 0, s: 1, o: 1, z: 4 },
+    { y: 16, s: 0.95, o: 0.55, z: 3 },
+    { y: 30, s: 0.9, o: 0.28, z: 2 },
+  ];
+  const HIDDEN_POSITION = { y: 42, s: 0.86, o: 0, z: 1 };
+
+  const testimonialDotEls = testimonialCards.map((_, i) => {
+    if (!testimonialDotsEl) return null;
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "wheel-dot";
+    dot.setAttribute("aria-label", `Show testimonial ${i + 1}`);
+    dot.addEventListener("click", () => {
+      goToTestimonial(i);
+      restartTestimonialAutoplay();
+    });
+    testimonialDotsEl.appendChild(dot);
+    return dot;
+  });
+
+  function testimonialOffset(index) {
+    let diff = index - activeTestimonialIndex;
+    if (diff < 0) diff += testimonialCount;
+    return diff;
+  }
+
+  function renderTestimonials() {
+    testimonialCards.forEach((card, i) => {
+      const offset = testimonialOffset(i);
+      const pos = STACK_POSITIONS[offset] || HIDDEN_POSITION;
+
+      card.style.setProperty("--sy", `${pos.y}px`);
+      card.style.setProperty("--ss", pos.s);
+      card.style.setProperty("--so", pos.o);
+      card.style.setProperty("--sz", pos.z);
+
+      const isActive = offset === 0;
+      card.classList.toggle("is-active", isActive);
+      card.setAttribute("aria-hidden", isActive ? "false" : "true");
+    });
+
+    testimonialDotEls.forEach((dot, i) => {
+      dot?.classList.toggle("active", i === activeTestimonialIndex);
+    });
+  }
+
+  function goToTestimonial(index) {
+    activeTestimonialIndex = ((index % testimonialCount) + testimonialCount) % testimonialCount;
+    renderTestimonials();
+  }
+
+  function goToNextTestimonial() {
+    goToTestimonial(activeTestimonialIndex + 1);
+  }
+
+  function startTestimonialAutoplay() {
+    if (prefersReducedMotionForTestimonials || testimonialCount < 2) return;
+    stopTestimonialAutoplay();
+    testimonialTimerId = window.setInterval(goToNextTestimonial, TESTIMONIAL_AUTOPLAY_MS);
+  }
+
+  function stopTestimonialAutoplay() {
+    if (testimonialTimerId) {
+      window.clearInterval(testimonialTimerId);
+      testimonialTimerId = null;
+    }
+  }
+
+  function restartTestimonialAutoplay() {
+    stopTestimonialAutoplay();
+    startTestimonialAutoplay();
+  }
+
+  testimonialStackEl.addEventListener("mouseenter", stopTestimonialAutoplay);
+  testimonialStackEl.addEventListener("mouseleave", startTestimonialAutoplay);
+
+  renderTestimonials();
+  startTestimonialAutoplay();
+}
+
 /* ---------- Smooth-scroll to in-page sections (e.g. #features) ---------- */
 /* Computed in JS (rather than relying on CSS scroll-margin-top) so the
    fixed header offset stays correct regardless of the page's zoom:80%

@@ -701,6 +701,33 @@ html {
     border-radius: 5px;
 }
 
+/* Testimonial dot indicators */
+
+.home-page .testimonial-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.home-page .testimonial-dots .wheel-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: none;
+    background: var(--home-border);
+    cursor: pointer;
+    padding: 0;
+    transition: .3s;
+}
+
+.home-page .testimonial-dots .wheel-dot.active {
+    background: var(--home-primary);
+    width: 26px;
+    border-radius: 5px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .home-page .feature-card {
         transition: opacity .3s ease;
@@ -814,18 +841,44 @@ html {
     animation: homeFloatRobot 6s ease-in-out infinite;
 }
 
+.home-page .testimonial-widget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.home-page .testimonial-stack {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    min-height: 380px;
+}
+
 .home-page .testimonial-card {
+    position: absolute;
+    inset: 0;
     background: #ffffff;
     border-radius: var(--home-radius);
     box-shadow: var(--home-shadow);
     border: 1px solid var(--home-border);
     padding: 40px 38px;
     max-width: 360px;
-    transition: transform .35s ease, box-shadow .35s ease;
+    transform: translateY(var(--sy, 0)) scale(var(--ss, 1));
+    opacity: var(--so, 1);
+    z-index: var(--sz, 1);
+    pointer-events: none;
+    transition: transform .65s cubic-bezier(.22, .68, 0, 1.01),
+                opacity .5s ease,
+                box-shadow .35s ease;
 }
 
-.home-page .testimonial-card:hover {
-    transform: translateY(-8px);
+.home-page .testimonial-card.is-active {
+    pointer-events: auto;
+}
+
+.home-page .testimonial-card.is-active:hover {
+    transform: translateY(-8px) scale(1);
     box-shadow: 0 25px 45px rgba(37, 99, 235, .16);
 }
 
@@ -1581,6 +1634,16 @@ html {
     .home-page .about-circle {
         width: 320px;
         height: 320px;
+    }
+
+    .home-page .testimonial-stack {
+        max-width: 320px;
+        min-height: 400px;
+    }
+
+    .home-page .testimonial-card {
+        max-width: 320px;
+        padding: 34px 28px;
     }
 }
 

@@ -40,7 +40,8 @@ body {
     font-family: var(--body-font);
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100vh;   /* fallback for older browsers */
+    min-height: 100dvh;  /* mobile-accurate viewport height (ignores browser chrome) */
     position: relative;
     overflow-x: hidden;
 }
