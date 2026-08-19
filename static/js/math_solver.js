@@ -41,12 +41,28 @@
   input.addEventListener('input', () => {
     const val = input.value.trim();
     if (!val) { livePreview.innerHTML = ''; return; }
+
+    // If the text is mostly English words (e.g. "Solve 567 * 54 using Vedic
+    // Mathematics"), rendering it as LaTeX mashes every word together with
+    // no spaces and italicizes each letter — show it as plain text instead.
+    if (looksLikePlainText(val)) {
+      livePreview.textContent = 'Preview: ' + val;
+      return;
+    }
+
     try {
       livePreview.innerHTML = 'Preview: ' + katex.renderToString(toLatexGuess(val), { throwOnError: false });
     } catch (err) {
-      livePreview.innerHTML = '';
+      livePreview.textContent = 'Preview: ' + val;
     }
   });
+
+  // A handful of common function names are fine inside real math notation;
+  // anything else with 4+ letters in a row signals prose, not an expression.
+  function looksLikePlainText(str) {
+    const stripped = str.replace(/\b(sin|cos|tan|log|ln|sqrt|lim|max|min|mod)\b/gi, '');
+    return /[a-zA-Z]{4,}/.test(stripped);
+  }
 
   clearBtn.addEventListener('click', () => {
     input.value = '';
@@ -106,6 +122,7 @@
 
   /* ---------- rendering ---------- */
   function renderSolution(result) {
+    solutionScroll.scrollTop = 0;
     emptyState.hidden = true;
     stepsList.hidden = false;
     stepsList.innerHTML = '';
@@ -135,7 +152,7 @@
       answerCard.style.animationDelay = (result.steps.length * 0.12) + 's';
       answerValue.innerHTML =
         (result.answer.math ? safeKatex(result.answer.math) : '') +
-        (result.answer.text ? ' <span style="opacity:.85;font-family:Poppins,sans-serif;font-size:.85rem;font-weight:400;">' + escapeHtml(result.answer.text) + '</span>' : '');
+        (result.answer.text ? ' <span style="opacity:.85;font-family:var(--body-font);font-size:.85rem;font-weight:400;">' + escapeHtml(result.answer.text) + '</span>' : '');
       lastStepsForCopy.push('Final answer: ' + (result.answer.math || result.answer.text || ''));
     }
 
@@ -155,6 +172,7 @@
   }
 
   function showError(message) {
+    solutionScroll.scrollTop = 0;
     emptyState.hidden = true;
     const div = document.createElement('div');
     div.className = 'ms-error';

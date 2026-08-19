@@ -23,15 +23,16 @@ logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("google_genai").setLevel(logging.WARNING)
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------
 # AI provider switch
 #
-# AI_PROVIDER=gemini (default) -> uses Google Gemini via google-genai, same
-# as before.
+# AI_PROVIDER=gemini (default) -> uses Google Gemini via google-genai, same as before.
 # AI_PROVIDER=ollama -> routes every generator class through Ollama Cloud
 # (https://ollama.com) using OLLAMA_API_KEY. Local Ollama is not used - this
-# always talks to the hosted cloud API, so no local install/pull is needed.
-# ---------------------------------------------------------------------------
+# always talks to the hosted cloud API, so model names should match the
+# direct ollama.com API naming (for example "gpt-oss:120b", not "gpt-oss:120b-cloud").
+# -----------------------------------------------------------------------------------------
+
 AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").strip().lower()
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com").rstrip("/")
@@ -47,10 +48,12 @@ app = Flask(
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 
 _IDENTITY_INSTRUCTION = (
-    "You are EduGenie - AI Study Assistant. "
+    "You are **EduGenie - AI Study Assistant. **"
 
-    "Developers: 1. Darshan Palankar, 2. Priyesh Kondvilkar. "
-    "Are the Computer Science students at Patkar-Varde College , Goregaon, Mumbai. "
+    "User start the conversation with hi, hello add your name with the response in bold."
+
+    "Developers: **Darshan Palankar** & **Priyesh Kondvilkar. **"
+    "They are **BSc. Computer Science** students at **Patkar-Varde College , Goregaon, Mumbai. **"
 
     "When the user asks about yourself, such as 'explain yourself', "
     "'who are you?', 'tell me about yourself', 'what is EduGenie?', "
@@ -83,7 +86,7 @@ AI_CHAT_SYSTEM_INSTRUCTION = (
     "chat context, not the dedicated Code Generator. "
 
     "Match the length of your response to the question. Simple, factual, "
-    "or greeting-style questions get a short answer - a sentence or two, "
+    "or greeting-style questions get a long or short answer - a sentence or two, "
     "or a short list at most. Reserve longer, multi-section answers for "
     "questions that genuinely need step-by-step depth (e.g. 'explain X in "
     "detail', 'walk me through Y'). Do not pad answers with restated "
@@ -213,6 +216,11 @@ def friendly_error_message(e):
         return "EduGenie is out of wishes for now. Please try again in a minute."
     if "GENAI_API_KEY" in error_text:
         return "EduGenie isn't configured correctly.."
+    if isinstance(e, httpx.HTTPStatusError) and e.response is not None and e.response.status_code == 410:
+        return (
+            "The configured Ollama model is no longer available on Ollama Cloud. "
+            "Please switch to a current model name and try again."
+        )
     if isinstance(e, ValueError) and "malformed JSON" in error_text:
         return (
             "EduGenie had trouble putting that quiz together, possibly because "
@@ -287,6 +295,7 @@ def ollama_chat_request(model, messages, response_format=None, max_output_tokens
     if OLLAMA_API_KEY:
         headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
 
+    logger.info("Calling Ollama host %s with model %s", OLLAMA_HOST, model)
     response = httpx.post(
         f"{OLLAMA_HOST}/api/chat",
         json=payload,
@@ -441,7 +450,7 @@ class AI_Chat:
     """
 
     MODEL = "gemini-3.5-flash-lite"
-    OLLAMA_MODEL = "gpt-oss:120b-cloud"
+    OLLAMA_MODEL = "gemma4"
 
 
     def __init__(self):
@@ -470,7 +479,7 @@ class AI_Chat:
                         model=self.model_name,
                         config={
                             "system_instruction": AI_CHAT_SYSTEM_INSTRUCTION,
-                            "max_output_tokens": 800,
+                            "max_output_tokens": 900,
                         },
                     )
                     _ai_chats_[session_id] = {"client": client, "chat": chat_obj}
@@ -504,7 +513,7 @@ class CodeGenerator:
     """
 
     MODEL = "gemini-2.5-flash"
-    OLLAMA_MODEL = "qwen3-coder:480b-cloud"
+    OLLAMA_MODEL = "gemma4"
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
@@ -530,7 +539,7 @@ class CodeGenerator:
                     client = self.get_client()
                     chat_obj = client.chats.create(
                         model=self.model_name,
-                        config={"system_instruction": CODE_GEN_SYSTEM_INSTRUCTION},
+                        config={"system_instruction": CODE_GEN_SYSTEM_INSTRUCTION, "max_output_tokens": 900},
                     )
                     _code_chats_[session_id] = {"client": client, "chat": chat_obj}
 
@@ -560,7 +569,7 @@ class QuizzGenerator:
     """
 
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b-cloud"
+    OLLAMA_MODEL = "gpt-oss:120b"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Quiz Generator. Given a topic, a difficulty level, "
@@ -623,7 +632,7 @@ class NotesGenerator:
     """
 
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b-cloud"
+    OLLAMA_MODEL = "gpt-oss:120b"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Notes Generator. Given a topic and a detail level, "
@@ -667,7 +676,7 @@ class MCQsGenerator:
     """
 
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b-cloud"
+    OLLAMA_MODEL = "gpt-oss:120b"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's MCQ Generator. Given a topic, a difficulty level, "
@@ -735,7 +744,7 @@ class MathSolver:
     """
 
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b-cloud"
+    OLLAMA_MODEL = "gpt-oss:120b"
 
     SYSTEM_INSTRUCTION = MATH_SOLVER_SYSTEM_INSTRUCTION
 

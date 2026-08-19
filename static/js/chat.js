@@ -21,6 +21,172 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   const checkIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12.5L9.5 18L20 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const expandIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const closeIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 5L19 19M19 5L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  const CODE_BLOCK_MIN_LINES = 3;
+  const KNOWN_LANG_LABELS = {
+    cpp: "C++",
+    csharp: "C#",
+    cs: "C#",
+    fsharp: "F#",
+    js: "JavaScript",
+    jsx: "JSX",
+    ts: "TypeScript",
+    tsx: "TSX",
+    py: "Python",
+    r: "R",
+    rb: "Ruby",
+    php: "PHP",
+    go: "Go",
+    rs: "Rust",
+    sh: "Shell",
+    bash: "Bash",
+    ps1: "PowerShell",
+    sql: "SQL",
+    html: "HTML",
+    xml: "XML",
+    css: "CSS",
+    json: "JSON",
+    yaml: "YAML",
+    yml: "YAML",
+    md: "Markdown",
+  };
+
+  const formatLanguageLabel = (lang) => {
+    if (!lang || lang.toLowerCase() === "text" || lang.toLowerCase() === "plaintext") return "Code";
+    return KNOWN_LANG_LABELS[lang.toLowerCase()] || lang;
+  };
+
+  const inferCodeLanguage = (text) => {
+    const source = (text || "").trim();
+    if (!source) return "";
+
+    if (/^\s*</.test(source) && /<\/?[a-z][\s\S]*>/i.test(source)) {
+      return /<html|<body|<div|<span|<script|<style/i.test(source) ? "html" : "xml";
+    }
+    if (/^\s*[{[]/.test(source) && /":\s*["{\[\d-]/.test(source)) return "json";
+    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|WITH)\b/im.test(source)) return "sql";
+    if (/^\s*(def |class |import |from |if __name__ == ['"]__main__['"])/m.test(source)) return "python";
+    if (/^\s*(library|require)\s*\(/m.test(source) || /<-\s*/.test(source) || /%>%/.test(source) || /\b(data\.frame|ggplot|mutate|summarise|filter|select|arrange|read\.csv)\s*\(/.test(source)) return "r";
+    if (/^\s*(function |const |let |var |export |import )/m.test(source) || /=>/.test(source)) return "javascript";
+    if (/^\s*(interface |type |enum )/m.test(source) || /:\s*(string|number|boolean|any|unknown)(\[\])?/.test(source)) return "typescript";
+    if (/^\s*(public |private |protected )/m.test(source) || /System\.out\.println|public static void main/.test(source)) return "java";
+    if (/^\s*#include\b/m.test(source) || /std::|cout\s*<</.test(source)) return "cpp";
+    if (/^\s*using\s+System\b/m.test(source) || /Console\.Write(Line)?/.test(source)) return "csharp";
+    if (/^\s*(package main|func main\()/m.test(source)) return "go";
+    if (/^\s*(fn main\(\)|let mut )/m.test(source)) return "rust";
+    if (/^\s*(body|html|:root|@media|@import)\b/m.test(source) && /[{:;]/.test(source)) return "css";
+    if (/^\s*(echo |if \[|fi\b|#!)/m.test(source)) return "bash";
+    if (/^\s*(Write-Host|Get-|Set-|New-|param\()/m.test(source)) return "powershell";
+
+    return "";
+  };
+
+  const isLikelyCodeLine = (line) => {
+    const trimmed = (line || "").trim();
+    if (!trimmed) return false;
+    if (/^[-*+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) return false;
+    if (/^\|.*\|$/.test(trimmed)) return false;
+    if (/^["'][^"']+["']\s*:\s*.+,?$/.test(trimmed)) return true;
+    if (/^[a-z-]+\s*:\s*[^:;]+;$/i.test(trimmed)) return true;
+    if (/^[A-Za-z_][\w$]*\s*=\s*.+$/.test(trimmed)) return true;
+    if (/^[A-Za-z_.][\w.]*\s*<-\s*.+$/.test(trimmed)) return true;
+    if (/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+\(.*\)\s*;?$/.test(trimmed)) return true;
+    if (/%>%|\|\>/.test(trimmed)) return true;
+
+    let score = 0;
+
+    if (/^(def|class|function|const|let|var|import|from|export|return|if|else|elif|for|while|try|catch|finally|switch|case|break|continue|public|private|protected|static|void|package|using|namespace|interface|type|enum|SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|WITH|body|html|:root|@media|#include|library|require)\b/.test(trimmed)) {
+      score += 2;
+    }
+    if (/[{};]/.test(trimmed) || /=>|::|<\/?[a-z][^>]*>/i.test(trimmed) || /<-\s*|%>%|\|\>/.test(trimmed)) {
+      score += 2;
+    }
+    if (/^[.#][\w-]+\s*[{:]/.test(trimmed) || /^[\w-]+\s*:\s*[^:]+;?$/.test(trimmed)) {
+      score += 1;
+    }
+    if (/^[A-Za-z_][\w$]*\s*\(.*\)\s*[{;]?$/.test(trimmed) || /\b\w+\(.*\)/.test(trimmed)) {
+      score += 1;
+    }
+    if (/^(\/\/|\/\*|\*\/|\* |#|--)\s?/.test(trimmed)) {
+      score += 1;
+    }
+    if (/^[\]\[()]+$/.test(trimmed)) {
+      score += 1;
+    }
+
+    return score >= 2;
+  };
+
+  const looksLikeCodeResponse = (text) => {
+    const lines = (text || "").split(/\r?\n/);
+    const nonEmptyLines = lines.filter((line) => line.trim());
+    if (nonEmptyLines.length < 2) return false;
+
+    const codeLikeLines = nonEmptyLines.filter(isLikelyCodeLine);
+    const inferredLanguage = inferCodeLanguage(text);
+
+    return Boolean(
+      inferredLanguage ||
+      (codeLikeLines.length >= CODE_BLOCK_MIN_LINES && codeLikeLines.length / nonEmptyLines.length >= 0.6)
+    );
+  };
+
+  const autoFenceCodeBlocks = (text) => {
+    const source = (text || "").trim();
+    if (!source || /```/.test(source)) return source;
+
+    if (looksLikeCodeResponse(source)) {
+      const lang = inferCodeLanguage(source);
+      return `\`\`\`${lang}\n${source}\n\`\`\``;
+    }
+
+    const lines = source.split(/\r?\n/);
+    const rebuilt = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const currentLine = lines[i];
+      let runStart = i;
+
+      if (!isLikelyCodeLine(currentLine)) {
+        rebuilt.push(currentLine);
+        i += 1;
+        continue;
+      }
+
+      let runEnd = i;
+      let codeLineCount = 0;
+
+      while (runEnd < lines.length) {
+        const candidate = lines[runEnd];
+        if (!candidate.trim()) {
+          if (runEnd + 1 < lines.length && isLikelyCodeLine(lines[runEnd + 1])) {
+            runEnd += 1;
+            continue;
+          }
+          break;
+        }
+
+        if (!isLikelyCodeLine(candidate)) break;
+        codeLineCount += 1;
+        runEnd += 1;
+      }
+
+      if (codeLineCount >= CODE_BLOCK_MIN_LINES) {
+        const blockLines = lines.slice(runStart, runEnd);
+        const lang = inferCodeLanguage(blockLines.join("\n"));
+        rebuilt.push(`\`\`\`${lang}`);
+        rebuilt.push(...blockLines);
+        rebuilt.push("```");
+        i = runEnd;
+        continue;
+      }
+
+      rebuilt.push(currentLine);
+      i += 1;
+    }
+
+    return rebuilt.join("\n");
+  };
 
   const copyText = async (text) => {
     try {
@@ -104,7 +270,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
   const openCodePanel = (codeEl, lang) => {
     const { backdrop, panel, langLabel, panelCode } = ensureCodePanel();
-    langLabel.textContent = lang;
+    langLabel.textContent = formatLanguageLabel(lang);
     panelCode.className = codeEl.className;
     panelCode.innerHTML = codeEl.innerHTML;
     panel.classList.add("open");
@@ -128,8 +294,8 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       const pre = codeEl.parentElement;
       if (pre.parentElement.classList.contains("code-block")) return;
 
-      const langMatch = codeEl.className.match(/language-(\w+)/);
-      const lang = langMatch ? langMatch[1] : "text";
+      const langMatch = codeEl.className.match(/language-([a-z0-9#+-]+)/i);
+      const lang = (langMatch ? langMatch[1] : inferCodeLanguage(codeEl.textContent)) || "text";
 
       if (window.hljs) {
         try {
@@ -147,7 +313,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
       const langLabel = document.createElement("span");
       langLabel.className = "code-lang";
-      langLabel.textContent = lang;
+      langLabel.textContent = formatLanguageLabel(lang);
 
       const actions = document.createElement("div");
       actions.style.display = "flex";
@@ -195,14 +361,15 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
     const label = document.createElement("div");
     label.className = "role-label";
-    label.textContent = role === "bot" ? "EduGenie" : "You";
+    label.textContent = role === "bot" ? "" : "";
     msg.appendChild(label);
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
     if (role === "bot" && window.marked && window.DOMPurify) {
-      bubble.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
+      const preparedText = autoFenceCodeBlocks(text || "");
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(preparedText));
       enhanceBubble(bubble);
     } else {
       bubble.textContent = text;
@@ -218,7 +385,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     const msg = document.createElement("div");
     msg.className = "msg bot thinking";
     msg.innerHTML = `
-      <div class="role-label">EduGenie</div>
+      <div class="role-label"></div>
       <div class="bubble">
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
       </div>

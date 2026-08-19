@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EduGenie — Math Solver</title>
+<link rel="icon" href="{{ url_for('static', filename='images/maths_solver_favicon.png') }}" type="image/png">
 
 <!-- Fonts: Inter (body) + Fraunces (display), matching base.css's --body-font / --display-font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,8 +29,8 @@
 <!-- ================= HERO ================= -->
 <section class="ms-hero">
   <p class="ms-eyebrow">Show your work, instantly</p>
-  <h1 class="ms-title"><em>Math</em>&nbsp;Solver</h1>
-  <p class="ms-subtitle">Type any problem — algebra, calculus, geometry, trigonometry or statistics — and get a full worked solution, one step at a time.</p>
+  <h1 class="ms-title">EduGenie - <em>Math</em>&nbsp;Solver</h1>
+  <p class="ms-subtitle">Type any problem — algebra, calculus, geometry, trigonometry or statistics.</p>
 </section>
 
 <!-- ================= MAIN WORKSPACE ================= -->
@@ -53,7 +54,7 @@
 
     <div class="ms-input-wrap">
       <textarea id="msProblemInput" placeholder="e.g. Solve for x: 3x + 7 = 22" rows="4"></textarea>
-      <div class="ms-input-preview" id="msLivePreview" aria-hidden="true"></div>
+      <div class="ms-input-preview" id="" aria-hidden="true"></div>
     </div>
 
     <div class="ms-example-row">

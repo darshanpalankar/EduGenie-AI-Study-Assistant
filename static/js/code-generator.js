@@ -20,6 +20,7 @@ if (promptEl && generateBtn && codeBox) {
     "C++": "cpp",
     Go: "go",
     Rust: "rs",
+    R: "R",
   };
 
   const LANGUAGE_HLJS = {
@@ -29,6 +30,7 @@ if (promptEl && generateBtn && codeBox) {
     "C++": "cpp",
     Go: "go",
     Rust: "rust",
+    R: "R",
   };
 
   const highlightCode = (language) => {
@@ -133,7 +135,7 @@ if (promptEl && generateBtn && codeBox) {
     ].filter(Boolean).join(" ");
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: instructions }),

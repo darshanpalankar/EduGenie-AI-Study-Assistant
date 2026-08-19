@@ -23,7 +23,23 @@ body.math-solver-page{
     linear-gradient(var(--ms-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--ms-grid) 1px, transparent 1px);
   background-size: 28px 28px;
-  min-height:100vh;
+  min-height:100vh;   /* fallback for older browsers */
+  min-height:100dvh;  /* tracks real visible viewport on mobile (address-bar safe) */
+}
+
+/* Desktop only: pin the page to exactly one viewport height so the
+   workspace flex layout below has a genuine upper bound to shrink
+   against — base.css only sets min-height (by design, so every other
+   page can grow/scroll normally), which on its own doesn't stop a long
+   solution from growing the whole page instead of scrolling internally.
+   Below 900px the layout stacks and is meant to scroll normally, so this
+   doesn't apply there. */
+@media (min-width:901px){
+  body.math-solver-page{
+    height:100vh;
+    height:100dvh;
+    overflow-y:auto;
+  }
 }
 
 body.math-solver-page *{box-sizing:border-box;}
@@ -57,8 +73,9 @@ body.math-solver-page .ms-steps[hidden]{
 body.math-solver-page .ms-hero{
   max-width:720px;
   margin:0 auto;
-  padding:56px 24px 20px;
+  padding:40px 24px 18px;
   text-align:center;
+  flex-shrink:0;
 }
 body.math-solver-page .ms-eyebrow{
   font-size:0.78rem;
@@ -88,33 +105,73 @@ body.math-solver-page .ms-subtitle{
   max-width:560px;
 }
 
-/* ---------------- Workspace grid ---------------- */
+/* ---------------- Workspace grid ----------------
+   body (base.css) is already display:flex;flex-direction:column with
+   min-height:100dvh. flex:1 here lets the workspace claim all the
+   vertical space left after the hero, instead of sizing to its own
+   content and leaving the rest of the screen empty. max-width scales
+   with the viewport so wide monitors aren't left with huge dead margins.
+
+   Flexbox (not Grid) on purpose: Grid's implicit row auto-sizes to the
+   tallest item's max-content, so a long solution would grow the row (and
+   the whole page) to fit every step instead of respecting the cap below.
+   Flex resolves each item's height straight from the container, so the
+   solution panel can't inflate past it — align-items:stretch does the
+   real work here. */
 body.math-solver-page .ms-workspace{
-  max-width:1180px;
-  margin:32px auto 80px;
-  padding:0 24px;
-  display:grid;
-  grid-template-columns:minmax(320px,420px) 1fr;
-  gap:24px;
-  align-items:start;
+  width:100%;
+  max-width:min(1680px, 94vw);
+  margin:0 auto;
+  padding:16px 24px 32px;
+  display:flex;
+  align-items:stretch;
+  gap:28px;
+  flex:1 1 auto;
+  min-height:0; /* let this flex child actually size to the remaining space rather than overflow it */
+}
+body.math-solver-page .ms-input-panel{
+  flex:0 0 420px;
+  max-width:460px;
+  min-width:340px;
+  align-self:flex-start; /* stays its natural compact height even though the row is taller */
+}
+body.math-solver-page .ms-solution-panel{
+  flex:1 1 auto;
+  min-width:0;
+}
+@media (max-width:1024px){
+  body.math-solver-page .ms-input-panel{flex-basis:360px;min-width:300px;}
+  body.math-solver-page .ms-workspace{gap:20px;}
 }
 @media (max-width:900px){
-  body.math-solver-page .ms-workspace{grid-template-columns:1fr;}
+  body.math-solver-page .ms-workspace{
+    flex-direction:column;
+    padding:0 20px 60px;
+    flex:none; /* stacked layout scrolls the whole page normally, like any mobile page */
+  }
+  body.math-solver-page .ms-input-panel{flex-basis:auto;max-width:none;min-width:0;align-self:stretch;}
+}
+@media (max-width:600px){
+  body.math-solver-page .ms-workspace{padding:0 14px 48px;gap:16px;}
 }
 
 body.math-solver-page .ms-panel{
   background:var(--ms-paper);
   border:1px solid var(--ms-line);
   border-radius:var(--ms-radius);
-  padding:24px;
+  padding:28px;
   box-shadow:0 1px 2px rgba(23,22,28,0.03);
+}
+@media (max-width:600px){
+  body.math-solver-page .ms-panel{padding:20px;border-radius:12px;}
 }
 
 body.math-solver-page .ms-panel-head{
   display:flex;
+  flex-wrap:wrap;
   align-items:baseline;
   justify-content:space-between;
-  gap:12px;
+  gap:8px 12px;
   margin-bottom:16px;
 }
 body.math-solver-page .ms-panel-head h2{
@@ -156,6 +213,15 @@ body.math-solver-page .ms-chip.is-active{
   color:#fff;
 }
 
+/* ---------------- Input panel shape ----------------
+   Panel sizes to its own content — a fixed height here just produced a
+   half-empty textarea on real screens. The textarea itself gets a taller,
+   fixed comfortable height instead of stretching to fill leftover space. */
+body.math-solver-page .ms-input-panel{
+  display:flex;
+  flex-direction:column;
+}
+
 /* ---------------- Input ---------------- */
 body.math-solver-page .ms-input-wrap{
   position:relative;
@@ -164,7 +230,9 @@ body.math-solver-page .ms-input-wrap{
 body.math-solver-page textarea#msProblemInput{
   width:100%;
   resize:vertical;
-  min-height:104px;
+  height:180px;
+  min-height:130px;
+  max-height:360px;
   border:1px solid var(--ms-line);
   border-radius:10px;
   padding:14px 16px;
@@ -261,11 +329,24 @@ body.math-solver-page .ms-btn-primary.is-loading .ms-btn-spinner{display:inline-
 body.math-solver-page .ms-btn-primary.is-loading .ms-btn-label{display:none;}
 @keyframes ms-spin{to{transform:rotate(360deg);}}
 
-/* ---------------- Solution panel ---------------- */
+/* ---------------- Solution panel ----------------
+   On desktop the grid row now spans the full remaining viewport height
+   (see .ms-workspace flex:1 above), so the panel fills it exactly via
+   height:100% — no wasted screen space, no arbitrary px/vh guess. Long
+   answers still scroll inside .ms-solution-scroll rather than growing
+   the panel. Below 900px the layout stacks and scrolls normally, so the
+   panel goes back to a comfortable viewport-relative height instead. */
 body.math-solver-page .ms-solution-panel{
-  min-height:420px;
+  height:100%;
+  min-height:480px;
   display:flex;
   flex-direction:column;
+}
+@media (max-width:900px){
+  body.math-solver-page .ms-solution-panel{height:clamp(380px, 62vh, 620px);min-height:0;}
+}
+@media (max-width:480px){
+  body.math-solver-page .ms-solution-panel{height:clamp(340px, 58vh, 520px);}
 }
 body.math-solver-page .ms-copy-btn{
   border:1px solid var(--ms-line);
@@ -280,7 +361,25 @@ body.math-solver-page .ms-copy-btn{
 body.math-solver-page .ms-copy-btn:hover{border-color:var(--ms-accent);color:var(--ms-accent);}
 body.math-solver-page .ms-copy-btn.is-copied{border-color:#2f9e5b;color:#2f9e5b;}
 
-body.math-solver-page .ms-solution-scroll{flex:1;}
+body.math-solver-page .ms-solution-scroll{
+  flex:1;
+  min-height:0;      /* required for a flex child to actually scroll instead of overflowing the panel */
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-right:6px;
+}
+/* Themed scrollbar so long solutions still feel native to the page */
+body.math-solver-page .ms-solution-scroll::-webkit-scrollbar{width:8px;}
+body.math-solver-page .ms-solution-scroll::-webkit-scrollbar-track{background:transparent;}
+body.math-solver-page .ms-solution-scroll::-webkit-scrollbar-thumb{
+  background:var(--ms-line);
+  border-radius:8px;
+}
+body.math-solver-page .ms-solution-scroll::-webkit-scrollbar-thumb:hover{background:var(--ms-ink-soft);}
+body.math-solver-page .ms-solution-scroll{
+  scrollbar-width:thin;
+  scrollbar-color:var(--ms-line) transparent;
+}
 
 body.math-solver-page .ms-empty-state{
   display:flex;
@@ -406,6 +505,8 @@ body.math-solver-page .ms-error{
 }
 
 @media (max-width:480px){
-  body.math-solver-page .ms-panel{padding:18px;}
-  body.math-solver-page .ms-workspace{padding:0 16px;}
+  body.math-solver-page .ms-hero{padding:36px 16px 14px;}
+  body.math-solver-page .ms-actions{flex-direction:column-reverse;}
+  body.math-solver-page .ms-actions .ms-btn{width:100%;justify-content:center;}
+  body.math-solver-page .ms-example-row{gap:6px;}
 }
