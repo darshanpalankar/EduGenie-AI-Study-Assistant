@@ -108,9 +108,9 @@
 
                 <div class="hero-buttons">
 
-                    <a href="#features" class="btn primary-btn">
+                    <a href="/ai-chat" target="_blank" class="btn primary-btn">
 
-                        Start Learning
+                        Try AI Chat
 
                         <i class="ri-arrow-right-line"></i>
 
@@ -208,13 +208,9 @@
 
             </p>
 
-            <div class="feature-wheel" id="featureWheel">
+            <div class="feature-marquee" id="featureMarquee" data-reveal="scale">
 
-                <button type="button" class="wheel-nav wheel-prev" id="featureWheelPrev" aria-label="Previous feature">
-                    <i class="ri-arrow-left-s-line"></i>
-                </button>
-
-                <div class="feature-wheel-stage" id="featureWheelStage">
+                <div class="feature-marquee-track" id="featureMarqueeTrack">
 
                     <!-- Card 1: AI Chat -->
 
@@ -323,13 +319,7 @@
 
                 </div>
 
-                <button type="button" class="wheel-nav wheel-next" id="featureWheelNext" aria-label="Next feature">
-                    <i class="ri-arrow-right-s-line"></i>
-                </button>
-
             </div>
-
-            <div class="feature-wheel-dots" id="featureWheelDots"></div>
 
         </div>
 
@@ -744,11 +734,112 @@
 
     <footer class="footer">
 
+        <div class="container footer-container">
 
-        <div class="container">
-            <p>
-                © 2026 EduGenie - AI Study Assistant
-            </p>
+            <div class="footer-top">
+
+                <!-- Brand -->
+
+                <div class="footer-col footer-brand">
+
+                    <a href="/" class="logo footer-logo">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EduGenie Logo">
+                        <span>Edu<span class="blue">Genie</span></span>
+                    </a>
+
+                    <p>
+                        Your all-in-one AI study assistant — chat, generate
+                        code, take notes, and solve problems faster.
+                    </p>
+
+                    <div class="footer-socials">
+
+                        <a href="#" class="footer-social" aria-label="Twitter / X">
+                            <i class="ri-twitter-x-line"></i>
+                        </a>
+
+                        <a href="#" class="footer-social" aria-label="Instagram">
+                            <i class="ri-instagram-line"></i>
+                        </a>
+
+                        <a href="#" class="footer-social" aria-label="LinkedIn">
+                            <i class="ri-linkedin-fill"></i>
+                        </a>
+
+                        <a href="#" class="footer-social" aria-label="GitHub">
+                            <i class="ri-github-fill"></i>
+                        </a>
+
+                    </div>
+
+                </div>
+
+                <!-- Quick Links -->
+
+                <div class="footer-col">
+
+                    <h4>Quick Links</h4>
+
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#how-it-works">How it Works</a></li>
+                    </ul>
+
+                </div>
+
+                <!-- Features -->
+
+                <div class="footer-col">
+
+                    <h4>Features</h4>
+
+                    <ul>
+                        <li><a href="/ai-chat" target="_blank">AI Chat</a></li>
+                        <li><a href="/code-generator" target="_blank">Code Generator</a></li>
+                        <li><a href="#">Notes Generator</a></li>
+                        <li><a href="#">Quiz Generator</a></li>
+                        <li><a href="/math-solver" target="_blank">Math Solver</a></li>
+                    </ul>
+
+                </div>
+
+                <!-- Contact -->
+
+                <div class="footer-col">
+
+                    <h4>Get in Touch</h4>
+
+                    <ul class="footer-contact">
+                        <li>
+                            <i class="ri-mail-line"></i>
+                            <span>hello@edugenie.app</span>
+                        </li>
+                        <li>
+                            <i class="ri-map-pin-line"></i>
+                            <span>Maharashtra, India</span>
+                        </li>
+                    </ul>
+
+                </div>
+
+            </div>
+
+            <div class="footer-divider"></div>
+
+            <div class="footer-bottom">
+
+                <p>
+                    © 2026 EduGenie — AI Study Assistant. All rights reserved.
+                </p>
+
+                <a href="#" class="footer-top-link">
+                    Back to top
+                    <i class="ri-arrow-up-line"></i>
+                </a>
+
+            </div>
 
         </div>
 

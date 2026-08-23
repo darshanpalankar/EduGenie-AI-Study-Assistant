@@ -11,237 +11,67 @@ if (homeMenuBtn && homeNavbar) {
   });
 }
 
-/* ---------- Features wheel carousel ---------- */
-/* Cards sit in 3D space around a shallow "wheel": the active card faces
-   forward at full size, and cards fall away to either side, rotated and
-   scaled down, like spokes on a wheel. Each card's position is driven by
-   CSS custom properties (--wx/--wz/--wr/--ws/--wo/--wzi) that get
-   recalculated whenever the active index or viewport width changes. */
+/* ---------- Features marquee: infinite scroll + pointer-tilt hover ---------- */
+/* The card set is duplicated once so the track can scroll from 0 to -50%
+   and loop seamlessly (CSS keyframes in home.css). Autoplay pauses on
+   hover/focus so people can read a card, and each card still tilts
+   toward the cursor via --tx/--ty custom properties. Under
+   prefers-reduced-motion the track is left static (no clones, no scroll)
+   and just wraps like a normal row. */
 
-const featureWheelEl = document.getElementById("featureWheel");
-const featureWheelStageEl = document.getElementById("featureWheelStage");
+const featureMarqueeEl = document.getElementById("featureMarquee");
+const featureTrackEl = document.getElementById("featureMarqueeTrack");
 
-if (featureWheelEl && featureWheelStageEl) {
-  const wheelCards = Array.from(featureWheelStageEl.children);
-  const cardCount = wheelCards.length;
-
-  const wheelPrevBtn = document.getElementById("featureWheelPrev");
-  const wheelNextBtn = document.getElementById("featureWheelNext");
-  const wheelDotsEl = document.getElementById("featureWheelDots");
-
-  const AUTOPLAY_DELAY_MS = 1200;
-  const TRANSITION_LOCK_MS = 750;
-
-  const prefersReducedMotionForWheel = window.matchMedia(
+if (featureMarqueeEl && featureTrackEl) {
+  const prefersReducedMotionForMarquee = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
 
-  let currentIndex = 0;
-  let autoplayTimerId = null;
-  let isTransitioning = false;
+  const MAX_TILT_DEG = 8;
 
-  // Build one dot indicator per card.
-  const dotEls = wheelCards.map((_, i) => {
-    const dot = document.createElement("button");
-    dot.type = "button";
-    dot.className = "wheel-dot";
-    dot.setAttribute("aria-label", `Go to feature ${i + 1}`);
-    dot.addEventListener("click", () => {
-      goToIndex(i);
-      restartAutoplay();
-    });
-    wheelDotsEl?.appendChild(dot);
-    return dot;
-  });
+  function attachTilt(card) {
+    card.addEventListener("mousemove", (e) => {
+      const rect = card.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
 
-  // Returns the CSS offsets to apply for a card at `offset` steps away
-  // from the active card (0 = front and center, ±1/±2 = spoke positions
-  // to either side). Sized down for narrower viewports.
-  function getOffsetStyle(offset) {
-    const width = window.innerWidth;
+      const tiltX = (px - 0.5) * 2 * MAX_TILT_DEG;
+      const tiltY = (0.5 - py) * 2 * MAX_TILT_DEG;
 
-    const FRONT = { x: 0, z: 0, r: 0, s: 1, o: 1, zi: 5 };
-
-    if (offset === 0) return FRONT;
-
-    if (width <= 480) {
-      // Only the active card is visible; neighbors wait just off-frame.
-      const side = offset > 0 ? 1 : -1;
-      return { x: side * 140, z: -160, r: side * -30, s: 0.7, o: 0, zi: 1 };
-    }
-
-    if (width <= 768) {
-      if (Math.abs(offset) === 1) {
-        const side = offset > 0 ? 1 : -1;
-        return { x: side * 190, z: -150, r: side * -34, s: 0.76, o: 0.5, zi: 4 };
-      }
-      const side = offset > 0 ? 1 : -1;
-      return { x: side * 190, z: -260, r: side * -34, s: 0.5, o: 0, zi: 1 };
-    }
-
-    if (Math.abs(offset) === 1) {
-      const side = offset > 0 ? 1 : -1;
-      return { x: side * 270, z: -170, r: side * -38, s: 0.82, o: 0.65, zi: 4 };
-    }
-    if (Math.abs(offset) === 2) {
-      const side = offset > 0 ? 1 : -1;
-      return { x: side * 480, z: -330, r: side * -50, s: 0.62, o: 0.28, zi: 3 };
-    }
-    const side = offset > 0 ? 1 : -1;
-    return { x: side * 640, z: -460, r: side * -55, s: 0.5, o: 0, zi: 1 };
-  }
-
-  // Shortest signed distance from the active card, so cards take the
-  // nearer path around the wheel when wrapping past the last/first card.
-  function relativeOffset(index) {
-    let diff = index - currentIndex;
-    if (diff > cardCount / 2) diff -= cardCount;
-    if (diff < -cardCount / 2) diff += cardCount;
-    return diff;
-  }
-
-  function render() {
-    wheelCards.forEach((card, i) => {
-      const offset = relativeOffset(i);
-      const style = getOffsetStyle(offset);
-
-      card.style.setProperty("--wx", `${style.x}px`);
-      card.style.setProperty("--wz", `${style.z}px`);
-      card.style.setProperty("--wr", `${style.r}deg`);
-      card.style.setProperty("--ws", style.s);
-      card.style.setProperty("--wo", style.o);
-      card.style.setProperty("--wzi", style.zi);
-
-      const isActive = offset === 0;
-      card.classList.toggle("is-active", isActive);
-      card.setAttribute("aria-hidden", isActive ? "false" : "true");
-      card.tabIndex = isActive ? 0 : -1;
-      card.style.pointerEvents = style.o > 0 || isActive ? "auto" : "none";
+      card.style.setProperty("--tx", `${tiltX}deg`);
+      card.style.setProperty("--ty", `${tiltY}deg`);
     });
 
-    dotEls.forEach((dot, i) => dot.classList.toggle("active", i === currentIndex));
-  }
-
-  function goToIndex(index) {
-    currentIndex = ((index % cardCount) + cardCount) % cardCount;
-    isTransitioning = true;
-    render();
-    window.clearTimeout(goToIndex._lockTimer);
-    goToIndex._lockTimer = window.setTimeout(() => {
-      isTransitioning = false;
-    }, TRANSITION_LOCK_MS);
-  }
-
-  function goToNext() {
-    goToIndex(currentIndex + 1);
-  }
-
-  function goToPrev() {
-    goToIndex(currentIndex - 1);
-  }
-
-  function startAutoplay() {
-    if (prefersReducedMotionForWheel) return;
-    stopAutoplay();
-    autoplayTimerId = window.setInterval(goToNext, AUTOPLAY_DELAY_MS);
-  }
-
-  function stopAutoplay() {
-    if (autoplayTimerId) {
-      window.clearInterval(autoplayTimerId);
-      autoplayTimerId = null;
-    }
-  }
-
-  function restartAutoplay() {
-    stopAutoplay();
-    startAutoplay();
-  }
-
-  // Clicking a side card brings it to the front instead of following its
-  // link; clicking the already-active card follows the link as normal.
-  wheelCards.forEach((card, i) => {
-    card.addEventListener("click", (e) => {
-      if (relativeOffset(i) !== 0) {
-        e.preventDefault();
-        if (!isTransitioning) {
-          goToIndex(i);
-          restartAutoplay();
-        }
-      }
+    card.addEventListener("mouseleave", () => {
+      card.style.setProperty("--tx", "0deg");
+      card.style.setProperty("--ty", "0deg");
     });
-  });
+  }
 
-  wheelPrevBtn?.addEventListener("click", () => {
-    if (isTransitioning) return;
-    goToPrev();
-    restartAutoplay();
-  });
+  const originalCards = Array.from(featureTrackEl.children);
+  originalCards.forEach(attachTilt);
 
-  wheelNextBtn?.addEventListener("click", () => {
-    if (isTransitioning) return;
-    goToNext();
-    restartAutoplay();
-  });
+  if (prefersReducedMotionForMarquee) {
+    featureTrackEl.classList.add("is-static");
+  } else {
+    // Clone the set once so the track is twice as wide as the visible
+    // cards; animating it exactly -50% then loops without a visible seam.
+    originalCards.forEach((card) => {
+      const clone = card.cloneNode(true);
+      clone.setAttribute("aria-hidden", "true");
+      clone.tabIndex = -1;
+      attachTilt(clone);
+      featureTrackEl.appendChild(clone);
+    });
 
-  // Keyboard support when the wheel (or a card inside it) has focus.
-  featureWheelEl.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      goToNext();
-      restartAutoplay();
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      goToPrev();
-      restartAutoplay();
-    }
-  });
+    const pause = () => featureTrackEl.classList.add("is-paused");
+    const resume = () => featureTrackEl.classList.remove("is-paused");
 
-  // Pause on hover/focus so people can read the front card in peace.
-  featureWheelEl.addEventListener("mouseenter", stopAutoplay);
-  featureWheelEl.addEventListener("mouseleave", startAutoplay);
-  featureWheelEl.addEventListener("focusin", stopAutoplay);
-  featureWheelEl.addEventListener("focusout", startAutoplay);
-
-  // Touch swipe support.
-  let touchStartX = 0;
-  let isSwiping = false;
-
-  featureWheelEl.addEventListener(
-    "touchstart",
-    (e) => {
-      touchStartX = e.touches[0].clientX;
-      isSwiping = true;
-      stopAutoplay();
-    },
-    { passive: true }
-  );
-
-  featureWheelEl.addEventListener(
-    "touchend",
-    (e) => {
-      if (!isSwiping) return;
-      isSwiping = false;
-      const deltaX = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(deltaX) > 40) {
-        if (deltaX < 0) goToNext();
-        else goToPrev();
-      }
-      startAutoplay();
-    },
-    { passive: true }
-  );
-
-  // Re-run the offset math on resize (debounced) so breakpoint changes
-  // reposition the spokes instead of leaving stale desktop offsets.
-  let resizeTimerId = null;
-  window.addEventListener("resize", () => {
-    window.clearTimeout(resizeTimerId);
-    resizeTimerId = window.setTimeout(render, 150);
-  });
-
-  render();
-  startAutoplay();
+    featureMarqueeEl.addEventListener("mouseenter", pause);
+    featureMarqueeEl.addEventListener("mouseleave", resume);
+    featureMarqueeEl.addEventListener("focusin", pause);
+    featureMarqueeEl.addEventListener("focusout", resume);
+  }
 }
 
 /* ---------- Testimonial stack (auto-cycling cards) ---------- */
@@ -393,11 +223,13 @@ const heroTypewriterEl = document.getElementById("heroTypewriter");
 if (heroTypewriterEl) {
   // Edit this list to change what the hero heading cycles through.
   const TYPEWRITER_PHRASES = [
-    "Smarter Learning",
-    "Faster Answers",
-    "Better Grades",
+    "Study Smarter, Not Harder",
+    "Understand Any Concept",
     "Effortless Notes",
-  ];
+    "Smarter Coding",
+    "Sharper Quizzes",
+    "Faster Math",
+];
 
   const TYPE_SPEED_MS = 65;
   const DELETE_SPEED_MS = 35;

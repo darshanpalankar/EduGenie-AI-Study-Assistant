@@ -1,5 +1,8 @@
+import base64
+import io
 import json
 import logging
+import mimetypes
 import os
 import re
 import threading
@@ -14,8 +17,15 @@ from flask import Flask, render_template, request, jsonify, session
 
 try:
     from google import genai
+    from google.genai import types as genai_types
 except ImportError:
     genai = None  # only required when AI_PROVIDER=gemini
+    genai_types = None
+
+try:
+    import pypdf
+except ImportError:
+    pypdf = None  # only required to read PDF text for the Ollama provider
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("edugenie")
@@ -188,6 +198,115 @@ app = Flask(
     static_folder=os.path.join(BASE_DIR, "static"),
 )
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
+
+# Request body cap for /api/chat file uploads (files travel as base64 JSON,
+# so the encoded payload runs ~33% larger than the raw file bytes).
+app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # 15 MB
+
+# -----------------------------------------------------------------------------------------
+# File sharing (AI Chat only)
+#
+# The frontend reads each attached file as base64 (FileReader) and sends it
+# in the /api/chat JSON body as {name, mime_type, data}. Images go to Gemini
+# as native multimodal parts and to Ollama via the /api/chat "images" field
+# (vision-capable cloud models only). PDFs go to Gemini as a native document
+# part (Gemini reads PDFs natively); Ollama has no native PDF support, so
+# their text is pulled out with pypdf and folded into the prompt instead.
+# Plain text/code files are always folded into the prompt as-is, for both
+# providers.
+# -----------------------------------------------------------------------------------------
+
+MAX_FILES_PER_MESSAGE = 4
+MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024  # 8 MB per attached file
+
+ALLOWED_IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+ALLOWED_TEXT_MIME_TYPES = {"text/plain", "text/markdown", "text/csv", "application/json"}
+TEXT_FILE_EXTENSIONS = {
+    ".txt", ".md", ".csv", ".json", ".py", ".js", ".jsx", ".ts", ".tsx",
+    ".java", ".c", ".cpp", ".h", ".cs", ".go", ".rs", ".rb", ".php",
+    ".html", ".css", ".sql", ".yml", ".yaml", ".log",
+}
+
+
+def _decode_uploaded_files(raw_files):
+    """
+    Validates and decodes the list of {name, mime_type, data} dicts sent by
+    the AI Chat frontend (data is base64 with no "data:...;base64," prefix -
+    the frontend strips that before sending). Returns a list of dicts:
+    {name, mime_type, kind: "image" | "pdf" | "text", bytes, text?}.
+
+    Raises ValueError with a short, user-facing message on any problem, so
+    the route can return it directly as the chat error instead of a 500.
+    """
+    if not raw_files:
+        return []
+
+    if len(raw_files) > MAX_FILES_PER_MESSAGE:
+        raise ValueError(f"You can attach up to {MAX_FILES_PER_MESSAGE} files per message.")
+
+    decoded = []
+    for f in raw_files:
+        name = (f.get("name") or "file").strip()[:120] or "file"
+        mime_type = (f.get("mime_type") or "").strip().lower()
+        data_b64 = f.get("data") or ""
+
+        if not mime_type:
+            guessed, _ = mimetypes.guess_type(name)
+            mime_type = guessed or "application/octet-stream"
+
+        ext = os.path.splitext(name)[1].lower()
+
+        if mime_type == "application/pdf":
+            kind = "pdf"
+        elif mime_type in ALLOWED_IMAGE_MIME_TYPES:
+            kind = "image"
+        elif mime_type in ALLOWED_TEXT_MIME_TYPES or ext in TEXT_FILE_EXTENSIONS:
+            kind = "text"
+            mime_type = mime_type if mime_type in ALLOWED_TEXT_MIME_TYPES else "text/plain"
+        else:
+            raise ValueError(f"'{name}' isn't a supported file type.")
+
+        try:
+            raw_bytes = base64.b64decode(data_b64, validate=True)
+        except Exception:
+            raise ValueError(f"'{name}' couldn't be read - the upload may be corrupted.")
+
+        if not raw_bytes:
+            raise ValueError(f"'{name}' appears to be empty.")
+
+        if len(raw_bytes) > MAX_FILE_SIZE_BYTES:
+            raise ValueError(
+                f"'{name}' is too large. Please attach files under "
+                f"{MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB."
+            )
+
+        entry = {"name": name, "mime_type": mime_type, "kind": kind, "bytes": raw_bytes}
+
+        if kind == "text":
+            entry["text"] = raw_bytes.decode("utf-8", errors="replace")
+
+        decoded.append(entry)
+
+    return decoded
+
+
+def _extract_pdf_text(raw_bytes, max_chars=12000):
+    """
+    Pulls plain text out of a PDF for providers with no native PDF support
+    (Ollama). Returns "" - never raises - on any failure (encrypted,
+    scanned/image-only, corrupted, or pypdf not installed), so callers can
+    just fall back to telling the model the PDF couldn't be read.
+    """
+    if pypdf is None:
+        return ""
+    try:
+        reader = pypdf.PdfReader(io.BytesIO(raw_bytes))
+        pages_text = [page.extract_text() or "" for page in reader.pages]
+        text = "\n".join(pages_text).strip()
+        return text[:max_chars]
+    except Exception:
+        logger.warning("Failed to extract text from a PDF attachment", exc_info=True)
+        return ""
 
 _IDENTITY_INSTRUCTION = (
     "You are **EduGenie - AI Study Assistant. **"
@@ -475,8 +594,17 @@ class _OllamaChatSession:
         if system_instruction:
             self.history.append({"role": "system", "content": system_instruction})
 
-    def send_message(self, message):
-        self.history.append({"role": "user", "content": message})
+    def send_message(self, message, images=None):
+        """
+        images: optional list of base64-encoded image strings (no data:
+        prefix), forwarded via Ollama's per-message "images" field for
+        vision-capable cloud models. Ignored (harmlessly, by the model) if
+        the selected model doesn't support images.
+        """
+        entry = {"role": "user", "content": message}
+        if images:
+            entry["images"] = images
+        self.history.append(entry)
         content = ollama_chat_request(self.model, self.history)
         self.history.append({"role": "assistant", "content": content})
         return SimpleNamespace(text=content)
@@ -646,7 +774,7 @@ class AI_Chat:
             with _ai_chats_lock:
                 _ai_chats_.pop(session_id, None)
 
-    def send_message(self, message):
+    def send_message(self, message, files=None):
         """
         Returns Gemini's raw markdown text (bold, bullets, fenced code
         blocks, etc. all survive) so the frontend's marked.js + DOMPurify
@@ -659,8 +787,17 @@ class AI_Chat:
         silently no-ops if TAVILY_API_KEY isn't set or the search fails -
         the user's own message is always sent through unmodified in that
         case.
+
+        files: optional list of decoded attachment dicts from
+        _decode_uploaded_files() - each {name, mime_type, kind, bytes,
+        text?}. Images are sent as native multimodal parts to Gemini, or
+        via Ollama's "images" field. PDFs go to Gemini as a native
+        document part; for Ollama their text is pulled out with pypdf and
+        folded into the prompt instead, since Ollama can't read PDF bytes
+        directly. Plain text/code files are always folded into the prompt.
         """
         chat = self.get_chat()
+        files = files or []
 
         outgoing_message = message
 
@@ -681,7 +818,53 @@ class AI_Chat:
                     f"USER QUESTION: {message}"
                 )
 
-        response = call_with_retry(chat.send_message, outgoing_message)
+        image_files = [f for f in files if f["kind"] == "image"]
+        pdf_files = [f for f in files if f["kind"] == "pdf"]
+        text_files = [f for f in files if f["kind"] == "text"]
+
+        text_blocks = [
+            f"--- Attached file: {f['name']} ---\n{f['text']}\n--- End of {f['name']} ---"
+            for f in text_files
+        ]
+
+        if AI_PROVIDER == "ollama":
+            # Ollama has no native PDF support - extract text with pypdf
+            # instead so the model can still read the content.
+            for f in pdf_files:
+                extracted = _extract_pdf_text(f["bytes"])
+                if extracted:
+                    text_blocks.append(
+                        f"--- Attached PDF: {f['name']} (extracted text) ---\n"
+                        f"{extracted}\n--- End of {f['name']} ---"
+                    )
+                else:
+                    text_blocks.append(
+                        f"[Attached PDF '{f['name']}' couldn't be read - "
+                        "no extractable text was found in it.]"
+                    )
+
+        if text_blocks:
+            outgoing_message = (
+                "ATTACHED FILES:\n" + "\n\n".join(text_blocks) +
+                "\n\nUSER MESSAGE:\n" + outgoing_message
+            )
+
+        if AI_PROVIDER == "ollama":
+            images_b64 = [base64.b64encode(f["bytes"]).decode("ascii") for f in image_files]
+            response = call_with_retry(chat.send_message, outgoing_message, images=images_b64 or None)
+            return clean_text(response.text)
+
+        # Gemini path - attach images and PDFs as native binary parts.
+        if (image_files or pdf_files) and genai_types is not None:
+            parts = [genai_types.Part.from_text(text=outgoing_message)]
+            for f in image_files:
+                parts.append(genai_types.Part.from_bytes(data=f["bytes"], mime_type=f["mime_type"]))
+            for f in pdf_files:
+                parts.append(genai_types.Part.from_bytes(data=f["bytes"], mime_type=f["mime_type"]))
+            response = call_with_retry(chat.send_message, parts)
+        else:
+            response = call_with_retry(chat.send_message, outgoing_message)
+
         return clean_text(response.text)
 
 
@@ -1024,12 +1207,18 @@ def chat():
     """
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
+    raw_files = data.get("files") or []
 
-    if not user_message:
+    if not user_message and not raw_files:
         return jsonify({"error": "Message cannot be empty."}), 400
 
     try:
-        reply = ai_chat_generator.send_message(user_message)
+        files = _decode_uploaded_files(raw_files)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    try:
+        reply = ai_chat_generator.send_message(user_message, files=files)
         return jsonify({"reply": reply})
     except Exception as e:
         logger.exception("Error while generating a chat response")
