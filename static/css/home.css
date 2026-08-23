@@ -664,9 +664,6 @@ html {
         transition: box-shadow .35s ease, border-color .35s ease;
     }
 }
-    border-radius: 5px;
-}
-
 /* Testimonial dot indicators */
 
 .home-page .testimonial-dots {
