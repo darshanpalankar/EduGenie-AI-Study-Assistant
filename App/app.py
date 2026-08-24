@@ -39,9 +39,6 @@ logging.getLogger("google_genai").setLevel(logging.WARNING)
 #
 # AI_PROVIDER=gemini (default) -> uses Google Gemini via google-genai, same as before.
 # AI_PROVIDER=ollama -> routes every generator class through Ollama Cloud
-# (https://ollama.com) using OLLAMA_API_KEY. Local Ollama is not used - this
-# always talks to the hosted cloud API, so model names should match the
-# direct ollama.com API naming (for example "gpt-oss:120b", not "gpt-oss:120b-cloud").
 # -----------------------------------------------------------------------------------------
 
 AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").strip().lower()
@@ -51,15 +48,6 @@ OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 
 # -----------------------------------------------------------------------------------------
 # Lightweight web search (RAG) for the AI Chat page only.
-#
-# Neither Gemini (without explicit grounding tools) nor Ollama Cloud models
-# have live web access, so time-sensitive questions ("who won X", "latest
-# Y", "current Z") get answered from training data alone and are often
-# wrong or refused. TAVILY_API_KEY enables a cheap pre-fetch step: detect
-# a time-sensitive question, pull a few fresh search results, and inject
-# them into the prompt as context before the model answers. If the key
-# isn't set, or the search call fails for any reason, this silently no-ops
-# and EduGenie behaves exactly as it did before - no hard dependency.
 # -----------------------------------------------------------------------------------------
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
@@ -75,13 +63,6 @@ TIME_SENSITIVE_PATTERNS = [
 ]
 _TIME_SENSITIVE_RE = [re.compile(p, re.IGNORECASE) for p in TIME_SENSITIVE_PATTERNS]
 
-# Questions asking for today's date/day/time are also "time-sensitive" by
-# the patterns above (they contain "today"/"current"/etc.), but a web
-# search is the wrong tool for them - Tavily's snippets don't reliably
-# contain today's actual date, so the model was falling back to a guess
-# from training data (off by a day in testing). The server's own clock is
-# free, instant, and always correct, so these are answered locally and
-# never sent to Tavily at all.
 DATE_TIME_PATTERNS = [
     r"\bwhat(?:'s| is) (today'?s date|the date|the time|day is it)\b",
     r"\btoday'?s date\b",
@@ -313,7 +294,7 @@ _IDENTITY_INSTRUCTION = (
 
     "User start the conversation with hi, hello add your name with the response in bold."
 
-    "Developers: **Darshan Palankar** & **Priyesh Kondvilkar. **"
+    "Developers: **Darshan Palankar** & **Priyesh Kondvilkar.**"
     "They are **BSc. Computer Science** students at **Patkar-Varde College , Goregaon, Mumbai. **"
 
     "When the user asks about yourself, such as 'explain yourself', "
