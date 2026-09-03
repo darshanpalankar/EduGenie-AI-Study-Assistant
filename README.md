@@ -48,6 +48,12 @@ Generate programming code and explanations with the help of AI.
 ### 🧠 Quiz Generator
 Create AI-generated quizzes to practice and test your understanding.
 
+### 🧠 Notes Generator
+Create custom study notes instantly to practice, review, and master any subject.
+
+### 🧠 Math Solver
+Get instant, step-by-step solutions to master complex math problems and practice your skills.
+
 ### 🤖 Interactive Experience
 EduGenie includes a responsive interface and animated robot elements to make the learning experience more engaging.
 
@@ -62,7 +68,7 @@ The frontend is designed using HTML, CSS, and JavaScript with a focus on a clean
 |---|---|
 | Frontend | HTML, CSS, JavaScript |
 | Backend | Python, Flask |
-| AI | Google Gemini API |
+| AI | Google Gemini API | Ollama API
 | Development | VS Code |
 | Version Control | Git & GitHub |
 
@@ -81,6 +87,7 @@ EduGenie - AI Study Assistant/
 │   │   ├── base.css
 │   │   ├── chat.css
 │   │   ├── code-generator.css
+│   │   ├── notes.css
 │   │   ├── home.css
 │   │   └── quiz-generator.css
 │   │
