@@ -68,7 +68,7 @@ The frontend is designed using HTML, CSS, and JavaScript with a focus on a clean
 |---|---|
 | Frontend | HTML, CSS, JavaScript |
 | Backend | Python, Flask |
-| AI | Google Gemini API | Ollama API
+| AI | Google Gemini API & Ollama API |
 | Development | VS Code |
 | Version Control | Git & GitHub |
 
