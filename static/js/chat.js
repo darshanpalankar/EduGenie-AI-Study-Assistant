@@ -22,6 +22,64 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   };
 
+  // ---------- Location for the time/date card ----------
+  // Resolves the user's real city via browser geolocation + a free,
+  // no-key reverse-geocoding lookup, so the time card doesn't always show
+  // the same fallback location for every user. Lazy: only triggers the
+  // permission prompt the first time a date/time question actually needs
+  // it, not on page load. Cached in sessionStorage so the prompt only
+  // happens once per browser tab.
+  //
+  // NOTE: navigator.geolocation is blocked by browsers on any non-HTTPS
+  // origin except localhost/127.0.0.1. On LAN HTTP testing
+  // (http://10.x.x.x:5000) this will silently resolve to null and the
+  // card will just show the backend's static fallback location instead -
+  // that's expected until this is served over HTTPS.
+  const LOCATION_CACHE_KEY = "edugenie_location_label";
+  let locationPromise = null;
+
+  const resolveUserLocation = () => {
+    if (locationPromise) return locationPromise;
+
+    const cached = sessionStorage.getItem(LOCATION_CACHE_KEY);
+    if (cached) {
+      locationPromise = Promise.resolve(cached);
+      return locationPromise;
+    }
+
+    if (!("geolocation" in navigator)) {
+      locationPromise = Promise.resolve(null);
+      return locationPromise;
+    }
+
+    locationPromise = new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords;
+            const res = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+            );
+            const geo = await res.json();
+            const label = [geo.city || geo.locality, geo.principalSubdivision, geo.countryCode]
+              .filter(Boolean)
+              .join(", ");
+            if (label) sessionStorage.setItem(LOCATION_CACHE_KEY, label);
+            resolve(label || null);
+          } catch {
+            resolve(null);
+          }
+        },
+        () => resolve(null), // permission denied, timeout, or other geolocation error
+        { timeout: 5000, maximumAge: 10 * 60 * 1000 }
+      );
+    });
+
+    return locationPromise;
+  };
+
+
+
   // ---------- Auto-growing composer textarea ----------
   // Reads the max-height from CSS so it can be tuned per breakpoint there
   // instead of being locked to a single value in JS.
@@ -59,6 +117,11 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   const closeIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 5L19 19M19 5L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
   const pdfIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15 2v5h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
   const fileIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15 2v5h5M9 13h6M9 17h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  const shareIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15V3M8 7l4-4 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const regenerateIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3v5h-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21v-5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const thumbUpIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 22V11M2 13v7a2 2 0 0 0 2 2h11.5a2 2 0 0 0 2-1.6l1.3-6A2 2 0 0 0 16.8 12H14V6a2 2 0 0 0-2-2c-.35 0-.68.16-.9.45L7 11H2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const thumbDownIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 2v11M22 11V4a2 2 0 0 0-2-2H8.5a2 2 0 0 0-2 1.6l-1.3 6A2 2 0 0 0 7.2 12H10v6a2 2 0 0 0 2 2c.35 0 .68-.16.9-.45L17 13h5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const alertIconSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8.5v4.25M12 16.25h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.6 3.75a1.6 1.6 0 0 1 2.8 0l8.4 14.8A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.45z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>`;
 
   // ==========================================
   // File attachments (mirrors app.py's _decode_uploaded_files limits)
@@ -650,7 +713,124 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     });
   };
 
-  const addMessage = (role, text, files) => {
+  // Builds the small time/date card shown above a bot reply when the user
+  // asked "what time is it" / "what's today's date" etc. `card` is the
+  // time_card object sent back by /api/chat (see app.py is_date_time_query
+  // handling): { time, hour, minute, date_label, full_date, location, tz }.
+  const buildTimeCard = (card) => {
+    const wrap = document.createElement("div");
+    wrap.className = "time-card";
+
+    const info = document.createElement("div");
+    info.className = "time-card-info";
+    info.innerHTML = `
+      <div class="time-card-time">${card.time}</div>
+      <div class="time-card-location">${card.location}</div>
+      <div class="time-card-date">${card.date_label}${card.full_date ? ` &middot; ${card.full_date}` : ""}</div>
+    `;
+
+    // Analog clock face - hour/minute hand angles computed from the same
+    // hour/minute the digital time above is built from, so they can never
+    // disagree with each other.
+    const hourAngle = (card.hour % 12) * 30 + card.minute * 0.5;
+    const minuteAngle = card.minute * 6;
+
+    const clock = document.createElement("div");
+    clock.className = "time-card-clock";
+    clock.innerHTML = `
+      <svg viewBox="0 0 100 100" width="72" height="72" aria-hidden="true">
+        <circle cx="50" cy="50" r="47"
+          style="fill:var(--chat-accent-soft);stroke:var(--chat-border);stroke-width:1.5" />
+        ${[...Array(12)].map((_, i) => {
+          const a = i * 30;
+          const x1 = 50 + 40 * Math.sin((a * Math.PI) / 180);
+          const y1 = 50 - 40 * Math.cos((a * Math.PI) / 180);
+          const x2 = 50 + 45 * Math.sin((a * Math.PI) / 180);
+          const y2 = 50 - 45 * Math.cos((a * Math.PI) / 180);
+          return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+            style="stroke:var(--chat-ink-faint);stroke-width:1.6;stroke-linecap:round" />`;
+        }).join("")}
+        <line x1="50" y1="50" x2="50" y2="26"
+          transform="rotate(${hourAngle} 50 50)"
+          style="stroke:var(--chat-ink);stroke-width:4;stroke-linecap:round" />
+        <line x1="50" y1="50" x2="50" y2="16"
+          transform="rotate(${minuteAngle} 50 50)"
+          style="stroke:var(--chat-accent);stroke-width:3;stroke-linecap:round" />
+        <circle cx="50" cy="50" r="3" style="fill:var(--chat-accent)" />
+      </svg>
+    `;
+
+    wrap.appendChild(info);
+    wrap.appendChild(clock);
+    return wrap;
+  };
+
+
+  // `sourceTurn` (the user text + files that produced this reply) is threaded
+  // through so "Regenerate" can re-ask the same question.
+  const buildMessageActions = (rawText, sourceTurn) => {
+    const bar = document.createElement("div");
+    bar.className = "msg-actions";
+
+    const makeBtn = (action, label, icon) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "msg-action-btn";
+      btn.dataset.action = action;
+      btn.title = label;
+      btn.setAttribute("aria-label", label);
+      btn.innerHTML = icon;
+      bar.appendChild(btn);
+      return btn;
+    };
+
+    const flashIcon = (btn, icon, ms = 1400) => {
+      const original = btn.innerHTML;
+      btn.innerHTML = icon;
+      setTimeout(() => {
+        btn.innerHTML = original;
+      }, ms);
+    };
+
+    const copyBtn = makeBtn("copy", "Copy response", copyIconSVG);
+    copyBtn.addEventListener("click", async () => {
+      const ok = await copyText(rawText);
+      flashIcon(copyBtn, ok ? checkIconSVG : copyIconSVG);
+    });
+
+    const shareBtn = makeBtn("share", "Share response", shareIconSVG);
+    shareBtn.addEventListener("click", async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: rawText, title: "EduGenie AI" });
+          return;
+        } catch (err) {
+          // user cancelled the native share sheet, or it isn't supported here - fall through to copy
+        }
+      }
+      const ok = await copyText(rawText);
+      flashIcon(shareBtn, ok ? checkIconSVG : shareIconSVG);
+    });
+
+    const divider = document.createElement("span");
+    divider.className = "msg-actions-divider";
+    bar.appendChild(divider);
+
+    const likeBtn = makeBtn("like", "Good response", thumbUpIconSVG);
+    const dislikeBtn = makeBtn("dislike", "Bad response", thumbDownIconSVG);
+    likeBtn.addEventListener("click", () => {
+      const active = likeBtn.classList.toggle("active");
+      if (active) dislikeBtn.classList.remove("active");
+    });
+    dislikeBtn.addEventListener("click", () => {
+      const active = dislikeBtn.classList.toggle("active");
+      if (active) likeBtn.classList.remove("active");
+    });
+
+    return bar;
+  };
+
+  const addMessage = (role, text, files, sourceTurn, timeCard) => {
     const msg = document.createElement("div");
     msg.className = `msg ${role}`;
 
@@ -681,6 +861,10 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       msg.appendChild(filesWrap);
     }
 
+    if (role === "bot" && timeCard) {
+      msg.appendChild(buildTimeCard(timeCard));
+    }
+
     if (text && text.trim()) {
       const bubble = document.createElement("div");
       bubble.className = "bubble";
@@ -694,6 +878,10 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       }
 
       msg.appendChild(bubble);
+
+      if (role === "bot") {
+        msg.appendChild(buildMessageActions(text, sourceTurn));
+      }
     }
 
     messagesEl.appendChild(msg);
@@ -715,6 +903,8 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     return msg;
   };
 
+  // Small inline red-text notice, used for file-attachment validation issues
+  // (wrong type, too large, etc.) - not for chat/network failures.
   const addError = (text) => {
     const el = document.createElement("div");
     el.className = "error-text";
@@ -723,20 +913,59 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     scrollToBottom();
   };
 
+  // Inline, retryable error row shown in the message stream (instead of a
+  // standalone red line) so a failed reply can be re-sent without retyping.
+  const addErrorMessage = (text, sourceTurn) => {
+    const msg = document.createElement("div");
+    msg.className = "msg bot error-msg";
+
+    const card = document.createElement("div");
+    card.className = "error-card";
+
+    const icon = document.createElement("div");
+    icon.className = "error-icon";
+    icon.innerHTML = alertIconSVG;
+    card.appendChild(icon);
+
+    const body = document.createElement("div");
+    body.className = "error-body";
+    const title = document.createElement("p");
+    title.className = "error-title";
+    title.textContent = "Something went wrong";
+    const desc = document.createElement("p");
+    desc.className = "error-desc";
+    desc.textContent = text;
+    body.appendChild(title);
+    body.appendChild(desc);
+    card.appendChild(body);
+
+    const retryBtn = document.createElement("button");
+    retryBtn.type = "button";
+    retryBtn.className = "error-retry-btn";
+    retryBtn.innerHTML = `${regenerateIconSVG}<span>Retry</span>`;
+    retryBtn.addEventListener("click", () => {
+      msg.remove();
+      sendBtn.disabled = true;
+      const thinkingEl = addThinkingIndicator();
+      performRequest(sourceTurn.text, sourceTurn.files, thinkingEl);
+    });
+    card.appendChild(retryBtn);
+
+    msg.appendChild(card);
+    messagesEl.appendChild(msg);
+    scrollToBottom();
+    return msg;
+  };
+
   let greetMsg = document.getElementById("greetMsg");
   const greetHTML = greetMsg ? greetMsg.outerHTML : "";
 
-  const sendMessage = async (text, files) => {
-    if (greetMsg) greetMsg.style.display = "none";
-
+  // Sends one request to the backend and renders either the reply or a
+  // retryable error row. Shared by the composer submit, the error row's
+  // "Retry" button, and each bot reply's "Regenerate" button.
+  const performRequest = async (text, files, thinkingEl) => {
     const filesToSend = files || [];
-    addMessage("user", text, filesToSend);
-    inputEl.value = "";
-    resetInputHeight();
-    clearAttachments();
-    sendBtn.disabled = true;
-
-    const thinkingEl = addThinkingIndicator();
+    const sourceTurn = { text, files: filesToSend };
 
     try {
       const res = await fetch("/api/chat", {
@@ -754,21 +983,48 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       });
 
       const data = await res.json();
-      thinkingEl.remove();
 
       if (!res.ok) {
-        addError(data.error || "Something went wrong. Please try again.");
+        thinkingEl.remove();
+        addErrorMessage(data.error || "Please check your internet connection and try again.", sourceTurn);
         return;
       }
 
-      addMessage("bot", data.reply);
+      if (data.time_card) {
+        // Give geolocation + reverse-geocoding up to 4s; if it's not back
+        // by then (slow GPS fix, user still deciding on the permission
+        // prompt, etc.) just render the card with the backend's fallback
+        // location rather than making the user wait on it.
+        const userLocation = await Promise.race([
+          resolveUserLocation(),
+          new Promise((resolve) => setTimeout(() => resolve(null), 4000)),
+        ]);
+        if (userLocation) data.time_card.location = userLocation;
+      }
+
+      thinkingEl.remove();
+      addMessage("bot", data.reply, null, sourceTurn, data.time_card);
     } catch (err) {
       thinkingEl.remove();
-      addError("Could not reach EduGenie. Check your connection and try again.");
+      addErrorMessage("Could not reach EduGenie. Check your internet connection and try again.", sourceTurn);
     } finally {
       sendBtn.disabled = false;
       inputEl.focus();
     }
+  };
+
+  const sendMessage = async (text, files) => {
+    if (greetMsg) greetMsg.style.display = "none";
+
+    const filesToSend = files || [];
+    addMessage("user", text, filesToSend);
+    inputEl.value = "";
+    resetInputHeight();
+    clearAttachments();
+    sendBtn.disabled = true;
+
+    const thinkingEl = addThinkingIndicator();
+    await performRequest(text, filesToSend, thinkingEl);
   };
 
   composerEl.addEventListener("submit", (e) => {

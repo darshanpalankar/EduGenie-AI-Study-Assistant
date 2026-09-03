@@ -1,36 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduGenie - Code Generator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduGenie - Notes Generator</title>
 
-    <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fonts: Fraunces (display) + Inter (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Remix Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<!-- Base tokens (shared across all EduGenie pages) -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+<!-- This page -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/notes.css') }}">
 </head>
 
-<body>
-    <body class="note-generator-page">
+<body class="notes-generator-page">
 
-    <div class="container">
-        <!-- ================= HEADER ================= -->
-        <div class="page-title">
-            <div class="title-icon">
-                <i class="fa-solid fa-code"></i>
+  <div class="ng-shell">
+
+    <!-- ================= HEADER ================= -->
+    <header class="ng-header">
+      <div class="ng-header-icon" aria-hidden="true">
+        <i class="ri-quill-pen-line"></i>
+      </div>
+      <div class="ng-header-text">
+        <h1>Notes Generator</h1>
+        <p class="ng-subtitle">Generate clear, concise and well-structured notes on any topic in seconds.</p>
+      </div>
+    </header>
+
+    <!-- ================= WORKSPACE ================= -->
+    <main class="ng-workspace">
+
+      <!-- ---------- INPUT PANEL ---------- -->
+      <section class="ng-panel ng-input-panel" aria-label="Note settings">
+        <form id="notesForm" novalidate>
+
+          <div class="ng-field">
+            <label for="topicInput"><i class="ri-checkbox-blank-line" aria-hidden="true"></i>Topic</label>
+            <textarea
+              id="topicInput"
+              name="topic"
+              rows="1"
+              placeholder="Enter the topic you want notes on..."
+              required
+              maxlength="300"></textarea>
+            <div class="ng-field-meta">
+              <span class="ng-hint">Be specific for sharper notes &mdash; add a chapter, unit, or exam name if you have one.</span>
+              <span class="ng-counter"><span id="topicCount">0</span>/300</span>
             </div>
-            <div>
-                <h1>EduGenie - Notes Generator</h1>
-                <p>Generate Notes instantly for any topic or concept.</p>
+          </div>
+
+          <div class="ng-field">
+            <label for="keyPointsInput"><i class="ri-list-check-2" aria-hidden="true"></i>Key Points <span class="ng-optional">(Optional)</span></label>
+            <textarea
+              id="keyPointsInput"
+              name="key_points"
+              rows="1"
+              placeholder="Add any related points or keywords..."
+              maxlength="100"></textarea>
+            <div class="ng-field-meta">
+              <span class="ng-hint">List anything specific you want the notes to cover.</span>
+              <span class="ng-counter"><span id="keyPointsCount">0</span>/100</span>
             </div>
+          </div>
+
+          <div class="ng-field-row">
+            <div class="ng-field">
+              <label for="classLevel"><i class="ri-graduation-cap-line" aria-hidden="true"></i>Class / Level</label>
+              <div class="ng-select-wrap">
+                <select id="classLevel" name="class_level">
+                  <option value="middle_school">Middle School</option>
+                  <option value="high_school">High School</option>
+                  <option value="undergraduate" selected>Undergraduate</option>
+                  <option value="graduate">Graduate</option>
+                  <option value="competitive_exam">Competitive Exam</option>
+                </select>
+                <i class="ri-arrow-down-s-line ng-select-caret" aria-hidden="true"></i>
+              </div>
+            </div>
+
+            <div class="ng-field">
+              <label for="noteStyle"><i class="ri-pencil-line" aria-hidden="true"></i>Note Style</label>
+              <div class="ng-select-wrap">
+                <select id="noteStyle" name="note_style">
+                  <option value="concise" selected>Concise</option>
+                  <option value="detailed">Detailed</option>
+                  <option value="outline">Outline</option>
+                  <option value="exam_focused">Exam-focused</option>
+                </select>
+                <i class="ri-arrow-down-s-line ng-select-caret" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="ng-field">
+            <label for="pagesValue"><i class="ri-file-list-3-line" aria-hidden="true"></i>Number of Pages</label>
+            <div class="ng-stepper">
+              <button type="button" class="ng-stepper-btn" id="pagesDecrement" aria-label="Decrease number of pages">
+                <i class="ri-subtract-line" aria-hidden="true"></i>
+              </button>
+              <span class="ng-stepper-value" id="pagesValue" role="status" aria-live="polite">1</span>
+              <button type="button" class="ng-stepper-btn" id="pagesIncrement" aria-label="Increase number of pages">
+                <i class="ri-add-line" aria-hidden="true"></i>
+              </button>
+            </div>
+            <input type="hidden" id="pagesInput" name="pages" value="1">
+          </div>
+
+          <button type="submit" class="ng-generate-btn" id="generateBtn">
+            <i class="ri-sparkling-2-fill" aria-hidden="true"></i>
+            <span>Generate Notes</span>
+          </button>
+
+          <p class="ng-trust-line">
+            <i class="ri-shield-check-line" aria-hidden="true"></i>
+            EduGenie ensures accurate and reliable notes.
+          </p>
+        </form>
+      </section>
+
+      <!-- ---------- OUTPUT PANEL ---------- -->
+      <section class="ng-panel ng-output-panel" aria-label="Generated notes" aria-live="polite">
+        <div class="ng-output-toolbar">
+          <div class="ng-output-title">
+            <i class="ri-file-list-3-line" aria-hidden="true"></i>
+            <span>Generated Notes</span>
+          </div>
+          <div class="ng-output-actions" id="outputActions" hidden>
+            <button type="button" class="ng-pill-btn" id="copyBtn" aria-label="Copy notes">
+              <i class="ri-file-copy-line" aria-hidden="true"></i>
+              <span>Copy</span>
+            </button>
+            <button type="button" class="ng-pill-btn" id="downloadBtn" aria-label="Download as text file">
+              <i class="ri-download-2-line" aria-hidden="true"></i>
+              <span>Download</span>
+            </button>
+            <button type="button" class="ng-icon-btn" id="clearBtn" title="Clear" aria-label="Clear notes">
+              <i class="ri-delete-bin-line" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
+
+        <div class="ng-output-body" id="outputBody">
+          <!-- Empty state (default) -->
+          <div class="ng-state ng-empty-state" id="emptyState">
+            <div class="ng-stack-icon" aria-hidden="true">
+              <span class="ng-stack-card ng-stack-card--back"></span>
+              <span class="ng-stack-card ng-stack-card--mid"></span>
+              <span class="ng-stack-card ng-stack-card--front">
+                <i class="ri-quill-pen-line"></i>
+              </span>
+            </div>
+            <h2>Nothing here yet</h2>
+            <p>Fill in a topic on the left and your study notes will show up here, organized by section.</p>
+          </div>
+
+          <!-- Loading state -->
+          <div class="ng-state ng-loading-state" id="loadingState" hidden>
+            <div class="ng-skeleton-block">
+              <div class="ng-skeleton-heading"></div>
+              <div class="ng-skeleton-line"></div>
+              <div class="ng-skeleton-line ng-skeleton-line--short"></div>
+              <div class="ng-skeleton-line"></div>
+            </div>
+            <div class="ng-skeleton-block">
+              <div class="ng-skeleton-heading"></div>
+              <div class="ng-skeleton-line"></div>
+              <div class="ng-skeleton-line ng-skeleton-line--short"></div>
+            </div>
+          </div>
+
+          <!-- Error state -->
+          <div class="ng-state ng-error-state" id="errorState" hidden>
+            <div class="ng-error-icon" aria-hidden="true"><i class="ri-error-warning-line"></i></div>
+            <h2>Couldn't generate notes</h2>
+            <p id="errorMessage">Something went wrong. Please try again.</p>
+            <button type="button" class="ng-retry-btn" id="retryBtn">
+              <i class="ri-refresh-line"></i>
+              <span>Try again</span>
+            </button>
+          </div>
+
+          <!-- Notes result -->
+          <div class="ng-notes" id="notesResult" hidden>
+            <h2 class="ng-notes-topic" id="notesTopic"></h2>
+            <div class="ng-notes-sections" id="notesSections"></div>
+          </div>
+        </div>
+
+        <!-- Stats footer (only visible once notes exist) -->
+        <!-- <div class="ng-output-footer" id="outputFooter" hidden>
+          <span class="ng-stat"><strong id="statWords">0</strong>&nbsp;Words</span>
+          <span class="ng-stat-sep" aria-hidden="true"></span>
+          <span class="ng-stat"><strong id="statPages">0</strong>&nbsp;Pages</span>
+          <span class="ng-stat-time">
+            <span class="ng-live-dot" aria-hidden="true"></span>
+            <span id="statTime">Generated just now</span>
+          </span>
+        </div> -->
+      </section>
+
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
 </body>
 </html>

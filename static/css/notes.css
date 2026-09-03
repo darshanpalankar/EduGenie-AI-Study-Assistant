@@ -1,0 +1,843 @@
+/* =========================================================================
+   Notes Generator — page styles
+   Loads AFTER base.css. All design tokens (--bg, --ink, --accent, --gold,
+   etc.), the global reset, and the flex body layout already come from
+   base.css — this file only adds page-specific rules, scoped under
+   body.notes-generator-page so nothing here can bleed into other pages.
+   ========================================================================= */
+
+body.notes-generator-page {
+  -webkit-font-smoothing: antialiased;
+}
+
+body.notes-generator-page .ng-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  gap: 24px;
+}
+
+/* ---------------------------------------------------------------------
+   Header
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page .ng-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+}
+
+body.notes-generator-page .ng-header-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 20px;
+  border: 1px solid var(--border);
+}
+
+body.notes-generator-page .ng-header-text {
+  text-align: left;
+}
+
+body.notes-generator-page .ng-header-text h1 {
+  margin: 0 0 4px;
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  max-width: 52ch;
+}
+
+/* ---------------------------------------------------------------------
+   Workspace — mobile-first single column, becomes a fixed-height
+   two-pane grid at desktop widths (flexbox inside each pane keeps the
+   heights well-behaved; grid alone would let the output pane grow past
+   its cap with long notes).
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page .ng-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+body.notes-generator-page .ng-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(38, 38, 31, .04);
+}
+
+body.notes-generator-page .ng-input-panel {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------------------------------------------------------------------
+   Input panel — form
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page #notesForm {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+body.notes-generator-page .ng-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body.notes-generator-page .ng-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+body.notes-generator-page .ng-field > label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-field > label i {
+  font-size: 14px;
+  color: var(--accent);
+}
+
+body.notes-generator-page .ng-optional {
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+body.notes-generator-page #topicInput,
+body.notes-generator-page #keyPointsInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 84px;
+  max-height: 220px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body-font);
+  font-size: 14.5px;
+  line-height: 1.5;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+body.notes-generator-page #topicInput::placeholder,
+body.notes-generator-page #keyPointsInput::placeholder {
+  color: var(--ink-dim);
+}
+
+body.notes-generator-page #topicInput:focus,
+body.notes-generator-page #keyPointsInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+body.notes-generator-page .ng-field-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+body.notes-generator-page .ng-hint {
+  line-height: 1.4;
+}
+
+body.notes-generator-page .ng-counter {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Class / Level & Note Style dropdowns */
+
+body.notes-generator-page .ng-select-wrap {
+  position: relative;
+}
+
+body.notes-generator-page .ng-select-wrap select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 11px 34px 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body-font);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+body.notes-generator-page .ng-select-wrap select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+body.notes-generator-page .ng-select-caret {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-dim);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* Number-of-pages stepper */
+
+body.notes-generator-page .ng-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 160px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  padding: 4px;
+}
+
+body.notes-generator-page .ng-stepper-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 15px;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+body.notes-generator-page .ng-stepper-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+body.notes-generator-page .ng-stepper-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+body.notes-generator-page .ng-stepper-value {
+  flex: 1;
+  text-align: center;
+  font-family: var(--body-font);
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Generate button */
+
+body.notes-generator-page .ng-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 18px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #5B6BEA);
+  color: #fff;
+  font-family: var(--body-font);
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .15s ease, opacity .15s ease;
+  box-shadow: 0 1px 2px rgba(38, 38, 31, .08);
+}
+
+body.notes-generator-page .ng-generate-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(61, 79, 219, .28);
+  transform: translateY(-1px);
+}
+
+body.notes-generator-page .ng-generate-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+body.notes-generator-page .ng-generate-btn:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+body.notes-generator-page .ng-generate-btn i {
+  font-size: 16px;
+}
+
+body.notes-generator-page .ng-generate-btn.is-loading i::before {
+  content: "\eb35"; /* ri-loader-4-line */
+}
+
+body.notes-generator-page .ng-generate-btn.is-loading i {
+  animation: ng-spin .8s linear infinite;
+}
+
+body.notes-generator-page .ng-trust-line {
+  margin: -6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+body.notes-generator-page .ng-trust-line i {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------------
+   Output panel
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page .ng-output-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+body.notes-generator-page .ng-output-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+body.notes-generator-page .ng-output-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--display-font);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-output-title i {
+  color: var(--gold);
+  font-size: 16px;
+}
+
+body.notes-generator-page .ng-output-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.notes-generator-page .ng-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body-font);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+body.notes-generator-page .ng-pill-btn i {
+  font-size: 14px;
+}
+
+body.notes-generator-page .ng-pill-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+body.notes-generator-page .ng-pill-btn.is-confirmed {
+  color: #2E9E5B;
+  border-color: #2E9E5B;
+  background: rgba(46, 158, 91, .08);
+}
+
+body.notes-generator-page .ng-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+body.notes-generator-page .ng-icon-btn:hover {
+  color: #C44444;
+  border-color: #C44444;
+  background: rgba(196, 68, 68, .08);
+}
+
+body.notes-generator-page .ng-output-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-soft) transparent;
+}
+
+body.notes-generator-page .ng-output-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.notes-generator-page .ng-output-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body.notes-generator-page .ng-output-body::-webkit-scrollbar-thumb {
+  background: var(--gold-soft);
+  border-radius: 8px;
+}
+
+body.notes-generator-page .ng-output-body::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* ---------------------------------------------------------------------
+   States: empty / loading / error (shared centered layout)
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page .ng-state {
+  height: 100%;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+}
+
+/* [hidden] vs a class-based `display: flex` are equal specificity, so
+   whichever rule is declared later in the stylesheet wins the cascade -
+   without this, a "hidden" state div can still render. This override
+   guarantees hidden always wins regardless of rule order elsewhere. */
+body.notes-generator-page .ng-state[hidden],
+body.notes-generator-page .ng-notes[hidden],
+body.notes-generator-page .ng-output-footer[hidden] {
+  display: none;
+}
+
+body.notes-generator-page .ng-state h2 {
+  margin: 18px 0 6px;
+  font-family: var(--display-font);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-state p {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+
+/* Empty state — stacked index-card mark */
+
+body.notes-generator-page .ng-stack-icon {
+  position: relative;
+  width: 64px;
+  height: 56px;
+}
+
+body.notes-generator-page .ng-stack-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+body.notes-generator-page .ng-stack-card--back {
+  background: var(--panel-raised);
+  transform: rotate(-8deg) translate(-4px, 2px);
+}
+
+body.notes-generator-page .ng-stack-card--mid {
+  background: var(--gold-soft);
+  border-color: var(--gold-soft);
+  transform: rotate(6deg) translate(4px, 1px);
+}
+
+body.notes-generator-page .ng-stack-card--front {
+  background: var(--panel);
+  border-color: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 20px;
+  box-shadow: 0 4px 10px rgba(38, 38, 31, .08);
+}
+
+/* Loading state — skeleton */
+
+body.notes-generator-page .ng-loading-state {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 22px;
+  text-align: left;
+}
+
+body.notes-generator-page .ng-skeleton-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.notes-generator-page .ng-skeleton-heading,
+body.notes-generator-page .ng-skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--panel-raised) 25%, var(--gold-soft) 37%, var(--panel-raised) 63%);
+  background-size: 400% 100%;
+  animation: ng-shimmer 1.4s ease-in-out infinite;
+}
+
+body.notes-generator-page .ng-skeleton-heading {
+  width: 42%;
+  height: 16px;
+}
+
+body.notes-generator-page .ng-skeleton-line {
+  width: 92%;
+  height: 12px;
+}
+
+body.notes-generator-page .ng-skeleton-line--short {
+  width: 60%;
+}
+
+/* Error state */
+
+body.notes-generator-page .ng-error-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196, 68, 68, .10);
+  color: #C44444;
+  font-size: 22px;
+}
+
+body.notes-generator-page .ng-retry-btn {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--body-font);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+body.notes-generator-page .ng-retry-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------------------------------------------------------------------
+   Notes result
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page .ng-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+body.notes-generator-page .ng-notes-topic {
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--border);
+  font-family: var(--display-font);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-notes-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+body.notes-generator-page .ng-note-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.notes-generator-page .ng-note-heading {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+body.notes-generator-page .ng-note-paragraph {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-note-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body.notes-generator-page .ng-note-points li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-note-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Equation / formula callout */
+
+body.notes-generator-page .ng-equation-box {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+body.notes-generator-page .ng-equation-formula {
+  font-family: var(--body-font);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .01em;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------
+   Stats footer
+   --------------------------------------------------------------------- */
+
+body.notes-generator-page .ng-output-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-raised);
+  border-radius: 0 0 18px 18px;
+  font-size: 12.5px;
+  color: var(--ink-dim);
+}
+
+body.notes-generator-page .ng-stat strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+body.notes-generator-page .ng-stat-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+}
+
+body.notes-generator-page .ng-stat-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+body.notes-generator-page .ng-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2E9E5B;
+  box-shadow: 0 0 0 3px rgba(46, 158, 91, .18);
+}
+
+/* ---------------------------------------------------------------------
+   Animations (respect prefers-reduced-motion)
+   --------------------------------------------------------------------- */
+
+@keyframes ng-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@keyframes ng-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.notes-generator-page .ng-skeleton-heading,
+  body.notes-generator-page .ng-skeleton-line {
+    animation: none;
+    background: var(--panel-raised);
+  }
+  body.notes-generator-page .ng-generate-btn.is-loading i {
+    animation: none;
+  }
+  body.notes-generator-page .ng-generate-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Breakpoints
+   Mobile-first base above; tablet refines spacing; desktop switches to
+   the fixed-height two-pane workspace.
+   --------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  body.notes-generator-page .ng-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 640px) {
+  body.notes-generator-page .ng-shell {
+    padding: 32px 28px 48px;
+  }
+
+  body.notes-generator-page .ng-header-text h1 {
+    font-size: 30px;
+  }
+
+  body.notes-generator-page .ng-input-panel {
+    padding: 26px;
+  }
+}
+
+@media (min-width: 960px) {
+  /* The app-shell scroll pattern: body gets a real, fixed height (not
+     just min-height) and stops scrolling itself; .ng-workspace fills
+     the remaining vertical space via flex, and only .ng-output-body
+     scrolls internally. Every link in this chain needs min-height: 0 -
+     flex items default to min-height: auto (their content's natural
+     size), which silently defeats "flex: 1" and lets a tall child force
+     the whole chain to grow instead of clipping/scrolling. */
+  body.notes-generator-page {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.notes-generator-page .ng-shell {
+    padding: 40px 32px 48px;
+    gap: 28px;
+    min-height: 0;
+  }
+
+  body.notes-generator-page .ng-workspace {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  body.notes-generator-page .ng-input-panel {
+    flex: 0 0 360px;
+    align-self: flex-start;
+    position: sticky;
+    top: 40px;
+    max-height: 100%;
+    overflow: auto;
+  }
+
+  body.notes-generator-page .ng-output-panel {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 1180px) {
+  body.notes-generator-page .ng-input-panel {
+    flex-basis: 400px;
+  }
+}

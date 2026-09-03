@@ -10,22 +10,26 @@ import time
 import uuid
 import socket
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from types import SimpleNamespace
-
 import httpx
+
+IST = ZoneInfo("Asia/Kolkata")
+APP_LOCATION_LABEL = "Mumbai, Maharashtra, IN"
+
 from flask import Flask, render_template, request, jsonify, session
 
 try:
     from google import genai
     from google.genai import types as genai_types
 except ImportError:
-    genai = None  # only required when AI_PROVIDER=gemini
+    genai = None
     genai_types = None
 
 try:
     import pypdf
 except ImportError:
-    pypdf = None  # only required to read PDF text for the Ollama provider
+    pypdf = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("edugenie")
@@ -34,21 +38,10 @@ logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("google_genai").setLevel(logging.WARNING)
 
-# -----------------------------------------------------------------------------------------
-# AI provider switch
-#
-# AI_PROVIDER=gemini (default) -> uses Google Gemini via google-genai, same as before.
-# AI_PROVIDER=ollama -> routes every generator class through Ollama Cloud
-# -----------------------------------------------------------------------------------------
-
 AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").strip().lower()
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com").rstrip("/")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
-
-# -----------------------------------------------------------------------------------------
-# Lightweight web search (RAG) for the AI Chat page only.
-# -----------------------------------------------------------------------------------------
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
 TAVILY_URL = "https://api.tavily.com/search"
@@ -56,7 +49,7 @@ TAVILY_TIMEOUT = float(os.getenv("TAVILY_TIMEOUT", "8"))
 
 TIME_SENSITIVE_PATTERNS = [
     r"\b(latest|current|currently|recent|recently|today|tonight|this week|this month|this year|now|nowadays|up[- ]to[- ]date)\b",
-    r"\b20(2[5-9]|[3-9]\d)\b",  # any year 2025 and later
+    r"\b20(2[5-9]|[3-9]\d)\b",
     r"\bwho (won|is|are|was|were)\b",
     r"\bwhat(?:'s| is) the (latest|current|newest)\b",
     r"\b(news|score|scores|result|results|winner|champion|election|price|prices|stock|release date|released)\b",
@@ -75,11 +68,6 @@ _DATE_TIME_RE = [re.compile(p, re.IGNORECASE) for p in DATE_TIME_PATTERNS]
 
 
 def is_date_time_query(query):
-    """
-    True for questions asking what today's date/day/time is. Checked
-    before needs_web_search() so these get answered from the server clock
-    instead of a (less reliable, and unnecessary) Tavily call.
-    """
     q = (query or "").strip()
     if not q:
         return False
@@ -87,13 +75,6 @@ def is_date_time_query(query):
 
 
 def needs_web_search(query):
-    """
-    Cheap keyword/regex heuristic - not another model call - to decide if a
-    chat message is likely asking about something time-sensitive enough
-    that the model's static training data won't have the answer. False
-    positives just cost an extra (free-tier) search call; false negatives
-    fall back to today's behavior.
-    """
     q = (query or "").strip()
     if not q:
         return False
@@ -102,25 +83,10 @@ def needs_web_search(query):
 
 _tavily_disabled_until = 0.0
 _tavily_disabled_lock = threading.Lock()
-TAVILY_COOLDOWN_SECONDS = float(os.getenv("TAVILY_COOLDOWN_SECONDS", str(30 * 60)))  # 30 min default
+TAVILY_COOLDOWN_SECONDS = float(os.getenv("TAVILY_COOLDOWN_SECONDS", str(30 * 60)))
 
 
 def web_search(query, max_results=4):
-    """
-    Calls Tavily's /search endpoint and returns a short plain-text blob
-    (quick answer + top result snippets) suitable for dropping straight
-    into a prompt. Returns "" on any failure - missing key, timeout, rate
-    limit, exhausted monthly credits, bad response - so callers can just
-    check truthiness and fall back to normal behavior without
-    special-casing errors.
-
-    If Tavily comes back with a 4xx (this covers both plain rate-limiting
-    and exhausted monthly credits, which Tavily also reports as a 4xx),
-    further calls are skipped for TAVILY_COOLDOWN_SECONDS so a maxed-out
-    key doesn't add a doomed ~8s wait to every single chat message for the
-    rest of the month - it just quietly stops trying for a while and
-    EduGenie behaves as if search were disabled.
-    """
     global _tavily_disabled_until
 
     if not TAVILY_API_KEY:
@@ -179,26 +145,10 @@ app = Flask(
     static_folder=os.path.join(BASE_DIR, "static"),
 )
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-me")
-
-# Request body cap for /api/chat file uploads (files travel as base64 JSON,
-# so the encoded payload runs ~33% larger than the raw file bytes).
-app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # 15 MB
-
-# -----------------------------------------------------------------------------------------
-# File sharing (AI Chat only)
-#
-# The frontend reads each attached file as base64 (FileReader) and sends it
-# in the /api/chat JSON body as {name, mime_type, data}. Images go to Gemini
-# as native multimodal parts and to Ollama via the /api/chat "images" field
-# (vision-capable cloud models only). PDFs go to Gemini as a native document
-# part (Gemini reads PDFs natively); Ollama has no native PDF support, so
-# their text is pulled out with pypdf and folded into the prompt instead.
-# Plain text/code files are always folded into the prompt as-is, for both
-# providers.
-# -----------------------------------------------------------------------------------------
+app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024
 
 MAX_FILES_PER_MESSAGE = 4
-MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024  # 8 MB per attached file
+MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024
 
 ALLOWED_IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 ALLOWED_TEXT_MIME_TYPES = {"text/plain", "text/markdown", "text/csv", "application/json"}
@@ -210,15 +160,6 @@ TEXT_FILE_EXTENSIONS = {
 
 
 def _decode_uploaded_files(raw_files):
-    """
-    Validates and decodes the list of {name, mime_type, data} dicts sent by
-    the AI Chat frontend (data is base64 with no "data:...;base64," prefix -
-    the frontend strips that before sending). Returns a list of dicts:
-    {name, mime_type, kind: "image" | "pdf" | "text", bytes, text?}.
-
-    Raises ValueError with a short, user-facing message on any problem, so
-    the route can return it directly as the chat error instead of a 500.
-    """
     if not raw_files:
         return []
 
@@ -272,12 +213,6 @@ def _decode_uploaded_files(raw_files):
 
 
 def _extract_pdf_text(raw_bytes, max_chars=12000):
-    """
-    Pulls plain text out of a PDF for providers with no native PDF support
-    (Ollama). Returns "" - never raises - on any failure (encrypted,
-    scanned/image-only, corrupted, or pypdf not installed), so callers can
-    just fall back to telling the model the PDF couldn't be read.
-    """
     if pypdf is None:
         return ""
     try:
@@ -316,7 +251,6 @@ _IDENTITY_INSTRUCTION = (
     "You are EduGenie - AI Study Assistant. "
 )
 
-# Used by the AI Chat page (/api/chat). Conversational, markdown allowed.
 AI_CHAT_SYSTEM_INSTRUCTION = (
     _IDENTITY_INSTRUCTION +
     "You are EduGenie's AI Chat assistant, a general-purpose study and conversation helper. "
@@ -356,7 +290,6 @@ AI_CHAT_SYSTEM_INSTRUCTION = (
     "than guessing."
 )
 
-# Used by the Code Generator page (/api/generate). Code-only, no prose.
 CODE_GEN_SYSTEM_INSTRUCTION = (
     _IDENTITY_INSTRUCTION +
     "EduGenie - Code Generator: When the user requests code, generate clean, "
@@ -368,7 +301,6 @@ CODE_GEN_SYSTEM_INSTRUCTION = (
     "explanation."
 )
 
-# Used by the Math Solver page (/api/math-solve). Strict JSON, step-by-step.
 MATH_SOLVER_SYSTEM_INSTRUCTION = (
     _IDENTITY_INSTRUCTION +
     "You are EduGenie's Math Solver. Given a math problem and, optionally, "
@@ -387,13 +319,6 @@ MATH_SOLVER_SYSTEM_INSTRUCTION = (
     "English restatement of it."
 )
 
-gemini_models = [
-    'gemini-3.5-flash-lite',
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-2.5-flash'
-    ]
-
 _ai_chats_ = {}
 _ai_chats_lock = threading.Lock()
 
@@ -402,15 +327,6 @@ _code_chats_lock = threading.Lock()
 
 
 def clean_text(text):
-    """
-    
-    Strips an outer markdown code-fence wrapper (```lang ... ```) if the
-    model added one despite being told not to. Only touches the fence
-    markers themselves - it no longer blanket-removes every '*' and '`'
-    character, since that was corrupting real code (e.g. *args, **kwargs,
-    pointer syntax, multiplication, JS template literals).
-    
-    """
     text = (text or "").strip()
     text = re.sub(r"^```[a-zA-Z0-9]*\n?", "", text)
     text = re.sub(r"\n?```$", "", text)
@@ -427,12 +343,6 @@ RETRYABLE_EXCEPTIONS = (
 
 
 def call_with_retry(func, *args, max_attempts=3, base_delay=1.0, **kwargs):
-    """
-    Runs func(*args, **kwargs), retrying with exponential backoff if a
-    transient network/SSL error is hit. Non-transient errors (bad API key,
-    quota exhausted, invalid request) are raised immediately, no retry.
-
-    """
     last_exc = None
     for attempt in range(1, max_attempts + 1):
         try:
@@ -451,11 +361,6 @@ def call_with_retry(func, *args, max_attempts=3, base_delay=1.0, **kwargs):
 
 
 def friendly_error_message(e):
-    """
-    Shared error translator so every /api/* route reports the same
-    user-facing messages for the same underlying failures.
-    
-    """
     error_text = str(e)
 
     if isinstance(e, RETRYABLE_EXCEPTIONS) or any(
@@ -497,15 +402,6 @@ _genai_client_lock = threading.Lock()
 
 
 def get_genai_client():
-    """
-    Returns a single shared genai.Client, created once and reused across
-    every request. Building a new client per call (as this used to do for
-    Quiz/Notes/MCQs) adds avoidable setup overhead - and loses HTTP
-    keep-alive - on every single generation, which is part of why response
-    times could feel randomly slow. Lock guards against two concurrent
-    requests both racing to create it on first use.
-    
-    """
     global _genai_client
     if _genai_client is None:
         with _genai_client_lock:
@@ -523,14 +419,6 @@ def get_genai_client():
 
 
 def ollama_chat_request(model, messages, response_format=None, max_output_tokens=None):
-    """
-    POSTs to Ollama's /api/chat endpoint (non-streaming) and returns the
-    assistant's reply text. Uses the shared httpx client behavior so
-    connection errors (server not running, wrong OLLAMA_HOST, etc.) surface
-    as httpx exceptions - the same RETRYABLE_EXCEPTIONS tuple that already
-    covers Gemini's transient errors, so call_with_retry works unchanged.
-
-    """
     payload = {
         "model": model,
         "messages": messages,
@@ -562,13 +450,6 @@ def ollama_chat_request(model, messages, response_format=None, max_output_tokens
 
 
 class _OllamaChatSession:
-    """
-    Mimics the surface of a google-genai chat session (client.chats.create())
-    that EduGenie actually uses - just .send_message(text) -> obj with .text.
-    History is kept in memory as a plain messages list and replayed on every
-    call, since Ollama's /api/chat is stateless per-request.
-    """
-
     def __init__(self, model, system_instruction=None):
         self.model = model
         self.history = []
@@ -576,12 +457,6 @@ class _OllamaChatSession:
             self.history.append({"role": "system", "content": system_instruction})
 
     def send_message(self, message, images=None):
-        """
-        images: optional list of base64-encoded image strings (no data:
-        prefix), forwarded via Ollama's per-message "images" field for
-        vision-capable cloud models. Ignored (harmlessly, by the model) if
-        the selected model doesn't support images.
-        """
         entry = {"role": "user", "content": message}
         if images:
             entry["images"] = images
@@ -616,13 +491,6 @@ class _OllamaModels:
 
 
 class OllamaClient:
-    """
-    Drop-in stand-in for genai.Client that speaks to a local Ollama server.
-    Mirrors only the two entry points EduGenie's generator classes use -
-    client.chats.create(...) and client.models.generate_content(...) - so
-    every generator class works against either backend unchanged.
-    """
-
     def __init__(self):
         self.chats = _OllamaChats()
         self.models = _OllamaModels()
@@ -633,13 +501,6 @@ _ollama_client_lock = threading.Lock()
 
 
 def get_ollama_client():
-    """
-    Same singleton pattern as get_genai_client() - built once, reused for
-    every request, double-checked locking against concurrent first use.
-    Requires OLLAMA_API_KEY since this always targets Ollama Cloud
-    (https://ollama.com), not a local server.
-
-    """
     global _ollama_client
     if _ollama_client is None:
         with _ollama_client_lock:
@@ -654,29 +515,12 @@ def get_ollama_client():
 
 
 def get_ai_client():
-    """
-    Single entry point every generator class's get_client() should call.
-    Routes to Gemini or Ollama based on AI_PROVIDER, so swapping providers
-    is a one-line env var change and nothing else in the file needs to know
-    which backend is actually in use.
-
-    """
     if AI_PROVIDER == "ollama":
         return get_ollama_client()
     return get_genai_client()
 
 
 def parse_json_response(raw_text):
-    """
-    Gemini is asked to return raw JSON, but if it wraps the payload in
-    markdown fences or stray formatting anyway, clean_text() strips that
-    before we parse.
-
-    Raises ValueError (instead of the raw JSONDecodeError) on failure, with
-    the offending text logged so truncated/malformed responses are
-    diagnosable instead of just showing a bare traceback.
-
-    """
     try:
         return json.loads(raw_text)
     except (TypeError, json.JSONDecodeError):
@@ -695,26 +539,20 @@ def parse_json_response(raw_text):
 
 
 def estimate_max_output_tokens(num_questions, per_question_tokens=220, base=400):
-    """
-    Rough token budget so longer quizzes/MCQ sets don't get cut off
-    mid-response, which is the usual cause of 'Expecting X delimiter' JSON
-    errors (the payload is truncated, not actually malformed).
-    
-    """
     return base + (per_question_tokens * max(1, int(num_questions or 1)))
 
-# Class -> Powers the AI Chat page
 class AI_Chat:
     """
-    Wraps the Gemini chat session lifecycle for the AI Chat page
-    (create/reuse/reset per Flask session). Uses its own session_id key
-    and its own _ai_chats_ store so it never shares conversation history
-    or system instruction with the Code Generator.
+    **Ollama Models** 
+    
+    - nemotron-3-ultra:cloud
+    - nemotron-3-super
+    - gemma4
+
     """
 
     MODEL = "gemini-3.5-flash-lite"
-    OLLAMA_MODEL = "gemma4"
-
+    OLLAMA_MODEL = "nemotron-3-ultra"
 
     def __init__(self):
         self.name = "EduGenie - AI Chat"
@@ -742,7 +580,7 @@ class AI_Chat:
                         model=self.model_name,
                         config={
                             "system_instruction": AI_CHAT_SYSTEM_INSTRUCTION,
-                            "max_output_tokens": 900,
+                            "max_output_tokens": 3000,
                         },
                     )
                     _ai_chats_[session_id] = {"client": client, "chat": chat_obj}
@@ -756,40 +594,29 @@ class AI_Chat:
                 _ai_chats_.pop(session_id, None)
 
     def send_message(self, message, files=None):
-        """
-        Returns Gemini's raw markdown text (bold, bullets, fenced code
-        blocks, etc. all survive) so the frontend's marked.js + DOMPurify
-        pipeline can render it.
-
-        Before calling the model, checks whether the message looks
-        time-sensitive (needs_web_search) and, if so, prepends a block of
-        fresh Tavily search results to what's actually sent to the model.
-        This only runs for AI Chat, not Code/Quiz/Notes/MCQ/Math, and it
-        silently no-ops if TAVILY_API_KEY isn't set or the search fails -
-        the user's own message is always sent through unmodified in that
-        case.
-
-        files: optional list of decoded attachment dicts from
-        _decode_uploaded_files() - each {name, mime_type, kind, bytes,
-        text?}. Images are sent as native multimodal parts to Gemini, or
-        via Ollama's "images" field. PDFs go to Gemini as a native
-        document part; for Ollama their text is pulled out with pypdf and
-        folded into the prompt instead, since Ollama can't read PDF bytes
-        directly. Plain text/code files are always folded into the prompt.
-        """
         chat = self.get_chat()
         files = files or []
 
         outgoing_message = message
+        time_card = None
 
         if is_date_time_query(message):
-            now = datetime.now()
+            now = datetime.now(IST)
             outgoing_message = (
-                "CURRENT DATE AND TIME (from the server's system clock - "
-                "this is ground truth, use it exactly as given, do not "
-                f"guess or adjust it): {now.strftime('%A, %B %d, %Y, %I:%M %p')}\n\n"
+                "CURRENT DATE AND TIME (India Standard Time - this is "
+                "ground truth, use it exactly as given, do not guess or "
+                f"adjust it): {now.strftime('%A, %B %d, %Y, %I:%M %p')} IST\n\n"
                 f"USER QUESTION: {message}"
             )
+            time_card = {
+                "time": now.strftime("%I:%M %p").lstrip("0"),
+                "hour": now.hour % 12,
+                "minute": now.minute,
+                "date_label": "Today",
+                "full_date": now.strftime("%A, %B %d, %Y"),
+                "location": APP_LOCATION_LABEL,
+                "tz": "IST",
+            }
         elif needs_web_search(message):
             search_results = web_search(message)
             if search_results:
@@ -809,8 +636,6 @@ class AI_Chat:
         ]
 
         if AI_PROVIDER == "ollama":
-            # Ollama has no native PDF support - extract text with pypdf
-            # instead so the model can still read the content.
             for f in pdf_files:
                 extracted = _extract_pdf_text(f["bytes"])
                 if extracted:
@@ -833,9 +658,8 @@ class AI_Chat:
         if AI_PROVIDER == "ollama":
             images_b64 = [base64.b64encode(f["bytes"]).decode("ascii") for f in image_files]
             response = call_with_retry(chat.send_message, outgoing_message, images=images_b64 or None)
-            return clean_text(response.text)
+            return clean_text(response.text), time_card
 
-        # Gemini path - attach images and PDFs as native binary parts.
         if (image_files or pdf_files) and genai_types is not None:
             parts = [genai_types.Part.from_text(text=outgoing_message)]
             for f in image_files:
@@ -846,18 +670,10 @@ class AI_Chat:
         else:
             response = call_with_retry(chat.send_message, outgoing_message)
 
-        return clean_text(response.text)
+        return clean_text(response.text), time_card
 
 
-# Class -> Generates code
 class CodeGenerator:
-    """
-    Wraps the Gemini chat session lifecycle for the Code Generator page
-    (create/reuse/reset per Flask session). Uses its own session_id key
-    and its own _code_chats_ store so it never shares conversation history
-    or system instruction with AI Chat.
-    """
-
     MODEL = "gemini-2.5-flash"
     OLLAMA_MODEL = "gemma4"
 
@@ -898,22 +714,12 @@ class CodeGenerator:
                 _code_chats_.pop(session_id, None)
 
     def send_message(self, message):
-        """
-        Strips markdown/code-fence characters via clean_text() so raw
-        code comes back clean, with no prose around it.
-        """
         chat = self.get_chat()
         response = call_with_retry(chat.send_message, message)
         return clean_text(response.text)
 
 
-# Class -> Generates The Quizz
 class QuizzGenerator:
-    """
-    Generates a short, open-ended-answer quiz on a topic using Gemini.
-    
-    """
-
     MODEL = "gemini-3.6-flash"
     OLLAMA_MODEL = "gpt-oss:120b"
 
@@ -970,13 +776,7 @@ class QuizzGenerator:
         raise last_error
 
 
-# Class -> Generates The Notes
 class NotesGenerator:
-    """
-    Generates structured plain-text study notes on a topic using Gemini.
-    
-    """
-
     MODEL = "gemini-3.6-flash"
     OLLAMA_MODEL = "gpt-oss:120b"
 
@@ -1014,13 +814,7 @@ class NotesGenerator:
         return clean_text(response.text)
 
 
-# Class -> Generates MCQs
 class MCQsGenerator:
-    """
-    Generates multiple-choice questions (with options + correct answer) using Gemini.
-    
-    """
-
     MODEL = "gemini-3.6-flash"
     OLLAMA_MODEL = "gpt-oss:120b"
 
@@ -1054,7 +848,7 @@ class MCQsGenerator:
             f"Number of questions: {num_questions}\n"
             "Generate the multiple-choice questions now."
         )
-    
+
         config = {
             "system_instruction": self.SYSTEM_INSTRUCTION,
             "response_mime_type": "application/json",
@@ -1080,17 +874,10 @@ class MCQsGenerator:
                 logger.warning("MCQ JSON parse attempt %s/2 failed, retrying.", attempt)
         raise last_error
 
-# Class -> Solves math problems step by step
-class MathSolver:
-    """
-    Solves a single math problem and returns a step-by-step breakdown plus
-    a final answer, both as strict JSON. Stateless like QuizzGenerator/
-    MCQsGenerator - each call is independent, there's no running chat
-    session to isolate or reset.
-    """
 
+class MathSolver:
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b"
+    OLLAMA_MODEL = "nemotron-3-super"
 
     SYSTEM_INSTRUCTION = MATH_SOLVER_SYSTEM_INSTRUCTION
 
@@ -1142,7 +929,7 @@ generator = CodeGenerator()
 quiz_generator = QuizzGenerator()
 notes_generator = NotesGenerator()
 mcqs_generator = MCQsGenerator()
-math_solver_generator = MathSolver()
+math_solver = MathSolver()
 
 
 @app.route("/")
@@ -1182,10 +969,6 @@ def math_solver_page():
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
-    """
-    AI Chat page. Backed by AI_Chat - its own Gemini session, its own
-    system instruction.
-    """
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
     raw_files = data.get("files") or []
@@ -1199,8 +982,11 @@ def chat():
         return jsonify({"error": str(e)}), 400
 
     try:
-        reply = ai_chat_generator.send_message(user_message, files=files)
-        return jsonify({"reply": reply})
+        reply, time_card = ai_chat_generator.send_message(user_message, files=files)
+        response = {"reply": reply}
+        if time_card:
+            response["time_card"] = time_card
+        return jsonify(response)
     except Exception as e:
         logger.exception("Error while generating a chat response")
         return jsonify({"error": friendly_error_message(e)}), 500
@@ -1208,11 +994,6 @@ def chat():
 
 @app.route("/api/generate", methods=["POST"])
 def generate_code():
-    """
-    Code Generator page. Backed by CodeGenerator - its own Gemini
-    session, its own system instruction, completely isolated from AI Chat.
-    """
-
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
 
@@ -1294,7 +1075,7 @@ def solve_math():
     topic = (data.get("topic") or "auto").strip() or "auto"
 
     try:
-        solution = math_solver_generator.solve(problem, topic=topic)
+        solution = math_solver.solve(problem, topic=topic)
         return jsonify(solution)
     except Exception as e:
         logger.exception("Error while solving a math problem")
@@ -1303,12 +1084,6 @@ def solve_math():
 
 @app.route("/api/reset", methods=["POST"])
 def reset():
-    """
-    Resets chat history. Accepts an optional {"type": "chat" | "code"}
-    body to reset just one page's session; with no body (or an unknown
-    type) both are reset, since AI Chat and Code Generator now keep
-    fully separate sessions and won't affect each other either way.
-    """
     data = request.get_json(silent=True) or {}
     reset_type = (data.get("type") or "").strip().lower()
 
