@@ -11,8 +11,11 @@ import uuid
 import socket
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from colorama import Fore, Style, init
 from types import SimpleNamespace
 import httpx
+
+init(autoreset=True)
 
 IST = ZoneInfo("Asia/Kolkata")
 APP_LOCATION_LABEL = "Mumbai, Maharashtra, IN"
@@ -227,18 +230,15 @@ def _extract_pdf_text(raw_bytes, max_chars=12000):
 _IDENTITY_INSTRUCTION = (
     "You are **EduGenie - AI Study Assistant. **"
 
-    "User start the conversation with hi, hello add your name with the response in bold."
+    "Start the conversation by greeting the user and introducing yourself as **EduGenie, your AI Study Assistant.**"
 
     "Developers: **Darshan Palankar** & **Priyesh Kondvilkar.**"
     "They are **BSc. Computer Science** students at **Patkar-Varde College , Goregaon, Mumbai. **"
 
     "When the user asks about yourself, such as 'explain yourself', "
     "'who are you?', 'tell me about yourself', 'what is EduGenie?', "
-    "or similar questions about your identity, explain that you are "
+    "or similar questions about your identity, explain in detail that you are "
     "EduGenie - AI Study Assistant "
-
-    "When the user asks specifically about the developers, creators, "
-    "or development team, provide the developer names. "
 
     "Do not mention the developer names during normal conversation, "
     "greetings, casual questions, study questions, explanations, or "
@@ -367,9 +367,7 @@ def friendly_error_message(e):
         marker in error_text for marker in ("SSL", "EOF occurred", "RemoteProtocolError", "ConnectError")
     ):
         return (
-            "EduGenie couldn't reach the AI service right now. This is usually a "
-            "network, VPN, antivirus, or firewall issue on this machine rather than "
-            "a problem with your request - please check your connection and try again."
+            "EduGenie couldn't reach the AI service right now."
         )
     if "RESOURCE_EXHAUSTED" in error_text or "429" in error_text:
         return "EduGenie is out of wishes for now. Please try again in a minute."
@@ -552,7 +550,7 @@ class AI_Chat:
     """
 
     MODEL = "gemini-3.5-flash-lite"
-    OLLAMA_MODEL = "nemotron-3-ultra"
+    OLLAMA_MODEL = "nemotron-3-super"
 
     def __init__(self):
         self.name = "EduGenie - AI Chat"
@@ -675,7 +673,7 @@ class AI_Chat:
 
 class CodeGenerator:
     MODEL = "gemini-2.5-flash"
-    OLLAMA_MODEL = "gemma4"
+    OLLAMA_MODEL = "nemotron-3-ultra"
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
@@ -778,7 +776,7 @@ class QuizzGenerator:
 
 class NotesGenerator:
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b"
+    OLLAMA_MODEL = "nemotron-3-super"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Notes Generator. Given a topic and a detail level, "
@@ -1113,17 +1111,17 @@ if __name__ == "__main__":
     except OSError:
         lan_ip = None
 
-    print(f" * EduGenie running at: http://127.0.0.1:{port}")
+    print(f"\n {Fore.YELLOW}* EduGenie{Fore.RESET} running at : {Fore.BLUE}http://127.0.0.1:{port}")
     if lan_ip:
-        print(f" * View on your phone (same Wi-Fi): http://{lan_ip}:{port}")
+        print(f" {Fore.YELLOW}* View on your phone (same Wi-Fi): {Fore.BLUE}http://{lan_ip}:{port}")
     if AI_PROVIDER == "ollama":
-        print(f" * AI provider: Ollama Cloud ({OLLAMA_HOST})")
+        print(f" {Fore.YELLOW}* AI provider: Ollama Cloud ({Fore.BLUE}{OLLAMA_HOST}{Fore.RESET})")
     else:
-        print(" * AI provider: Gemini")
+        print(f" {Fore.YELLOW}* AI provider: Gemini")
 
     if TAVILY_API_KEY:
-        print(" * Web search (AI Chat): enabled via Tavily")
+        print(f"{Fore.GREEN} * Web search (AI Chat): enabled via Tavily")
     else:
-        print(" * Web search (AI Chat): disabled (TAVILY_API_KEY not set)")
+        print(f"{Fore.RED} * Web search (AI Chat): disabled (TAVILY_API_KEY not set)")
 
     app.run(host="0.0.0.0", port=port, debug=debug, threaded=True)

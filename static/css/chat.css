@@ -260,7 +260,7 @@ body.chat-page .msg.user .role-label {
 
 body.chat-page .bubble {
     font-family: 'Poppins', sans-serif;
-    font-size: 14.5px;
+    font-size: 14px;
     line-height: 1.7;
     font-weight: 500;
     border-radius: 10px 0 10px 10px;
@@ -282,6 +282,7 @@ body.chat-page .msg.user .bubble {
 }
 
 body.chat-page .msg.bot .bubble {
+    margin-top: -20px;
     white-space: normal;
     background: none;
     border: none;
@@ -732,6 +733,10 @@ body.chat-page .bubble .expand-btn {
 
     .code-side-panel-body {
         padding: 16px;
+    }
+
+    .code-side-panel-body code {
+        font-size: 11px;
     }
 }
 
@@ -1225,6 +1230,16 @@ body.chat-page .error-retry-btn:hover {
 }
 
 @media (max-width: 480px) {
+    body.chat-page .composer-hint {
+        text-align: center;
+        font-size: 10px;
+        font-weight: 400;
+    }
+
+    body.chat-page .bubble .code-block code {
+        font-size: 11px;
+    }
+
     body.chat-page .error-card {
         flex-wrap: wrap;
         gap: 10px;
@@ -1247,7 +1262,7 @@ body.chat-page .error-retry-btn:hover {
     }
 
     body.chat-page .msg {
-        max-width: 88%;
+        max-width: 95%;
     }
 
     body.chat-page .greet {
@@ -1257,6 +1272,11 @@ body.chat-page .error-retry-btn:hover {
     body.chat-page .suggestion-chip {
         font-size: 12.5px;
         padding: 8px 13px;
+    }
+
+    body.chat-page .bubble {
+        font-size: 12px;
+        line-height: 1.6;
     }
 
     body.chat-page .bubble table {
@@ -1274,7 +1294,8 @@ body.chat-page .error-retry-btn:hover {
     }
 
     body.chat-page .composer textarea {
-        max-height: min(35vh, 220px);
+        font-size: 12.5px;
+        max-height: min(20vh, 100px);
     }
 }
 
@@ -1289,6 +1310,7 @@ body.chat-page .error-retry-btn:hover {
         animation: none;
     }
 }
+
 /* ---------- Time / date card (shown when the user asks "what time is it", "today's date", etc.) ---------- */
 
 body.chat-page .time-card {

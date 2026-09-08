@@ -76,7 +76,7 @@ html {
 ======================================*/
 
 .home-page .container {
-    width: 90%;
+    width: 80%;
     max-width: var(--home-container);
     margin: auto;
 }
@@ -1125,7 +1125,7 @@ html {
 }
 
 .home-page .mock-row-reply {
-    margin-top: -65px;
+    margin-top: -20px;
     justify-content: flex-start;
     animation: mockReplyStage 10s ease infinite;
 }
@@ -1768,7 +1768,7 @@ html {
 
 @media (max-width:480px) {
     .home-page .container {
-        width: 92%;
+        width: 82%;
     }
 
     .home-page .logo span {
