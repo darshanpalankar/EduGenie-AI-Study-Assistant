@@ -480,29 +480,174 @@
     .code-generator-page .line-numbers {
         padding: 20px 10px 20px 14px;
     }
+
+    /* Keep lengthy generated code inside the output box on phones and tablets. */
+    .code-generator-page .code-body {
+        max-height: min(55dvh, 420px);
+        overflow-x: auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-color: #334155 #0b1220;
+        scrollbar-width: thin;
+    }
+
+    .code-generator-page pre {
+        min-width: max-content;
+        overflow: visible;
+    }
+
+    .code-generator-page .code-body::-webkit-scrollbar {
+        width: 7px;
+        height: 7px;
+    }
+
+    .code-generator-page .code-body::-webkit-scrollbar-track {
+        background: #0b1220;
+    }
+
+    .code-generator-page .code-body::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 999px;
+    }
 }
 
 @media (max-width:500px) {
 
+    .code-generator-page .container {
+        margin: 16px auto;
+        padding: 0 14px;
+    }
+
+    .code-generator-page .page-title {
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
     .code-generator-page .title-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 22px;
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        font-size: 20px;
+        flex: 0 0 auto;
     }
 
     .code-generator-page .page-title h1 {
-        font-size: 26px;
+        font-size: 24px;
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+
+    .code-generator-page .page-title p {
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .code-generator-page .card,
+    .code-generator-page .output-card {
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .code-generator-page .card-grid {
+        gap: 18px;
+    }
+
+    .code-generator-page .field label {
+        margin-bottom: 8px;
+    }
+
+    .code-generator-page textarea {
+        height: 140px;
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .code-generator-page .counter {
+        bottom: 14px;
+        right: 14px;
+        font-size: 12px;
     }
 
     .code-generator-page .generate-btn {
+        height: 54px;
         font-size: 15px;
     }
 
     .code-generator-page .select-box {
         height: 52px;
+        padding: 0 14px;
+        border-radius: 12px;
     }
 
     .code-generator-page .output-header h3 {
         font-size: 20px;
+    }
+
+    .code-generator-page .output-header {
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .code-generator-page .actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        gap: 6px;
+    }
+
+    .code-generator-page .actions button {
+        justify-content: center;
+        gap: 5px;
+        min-height: 38px;
+        font-size: 11px;
+    }
+
+    .code-generator-page .actions i {
+        font-size: 13px;
+    }
+
+    .code-generator-page .language-tag {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        font-size: 12px;
+    }
+
+    .code-generator-page .code-body {
+        max-height: min(55dvh, 360px);
+        overflow-x: auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-color: #334155 #0b1220;
+        scrollbar-width: thin;
+    }
+
+    .code-generator-page pre {
+        min-width: max-content;
+        padding: 16px;
+        font-size: 12px;
+        overflow: visible;
+    }
+
+    .code-generator-page .line-numbers {
+        padding: 16px 8px 16px 10px;
+        font-size: 11px;
+    }
+
+    .code-generator-page .code-body::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .code-generator-page .code-body::-webkit-scrollbar-track {
+        background: #0b1220;
+    }
+
+    .code-generator-page .code-body::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 999px;
     }
 }
