@@ -799,7 +799,7 @@ class AI_Chat:
 
 class CodeGenerator:
     MODEL = "gemini-2.5-flash"
-    OLLAMA_MODEL = "nemotron-3-ultra"
+    OLLAMA_MODEL = "gemma4"
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
@@ -940,7 +940,7 @@ class NotesGenerator:
 
 class MCQsGenerator:
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b"
+    OLLAMA_MODEL = "gemma4"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's MCQ Generator. Given a topic, a difficulty level, "
