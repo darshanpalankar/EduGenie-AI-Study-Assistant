@@ -845,7 +845,7 @@ class CodeGenerator:
 
 class QuizzGenerator:
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gpt-oss:120b"
+    OLLAMA_MODEL = "gemma4"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Quiz Generator. Given a topic, a difficulty level, "
@@ -902,7 +902,7 @@ class QuizzGenerator:
 
 class NotesGenerator:
     MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "nemotron-3-super"
+    OLLAMA_MODEL = "gemma4"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Notes Generator. Given a topic and a detail level, "
