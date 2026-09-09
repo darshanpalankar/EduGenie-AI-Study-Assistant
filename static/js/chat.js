@@ -889,6 +889,40 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     return msg;
   };
 
+  // Streaming replies start as plain text, then receive the normal markdown
+  // rendering and message actions once the server signals completion.
+  const addStreamingMessage = (timeCard) => {
+    const msg = document.createElement("div");
+    msg.className = "msg bot";
+    msg.appendChild(document.createElement("div")).className = "role-label";
+
+    if (timeCard) msg.appendChild(buildTimeCard(timeCard));
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    msg.appendChild(bubble);
+    messagesEl.appendChild(msg);
+    scrollToBottom();
+    return { msg, bubble };
+  };
+
+  const finishStreamingMessage = (streamMessage, text, sourceTurn) => {
+    const { msg, bubble } = streamMessage;
+    const preparedText = autoFenceCodeBlocks(text || "");
+    bubble.innerHTML = DOMPurify.sanitize(marked.parse(preparedText));
+    enhanceBubble(bubble);
+    msg.appendChild(buildMessageActions(text, sourceTurn));
+    scrollToBottom();
+  };
+
+  const renderStreamingMarkdown = (bubble, text) => {
+    if (window.marked && window.DOMPurify) {
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
+    } else {
+      bubble.textContent = text;
+    }
+  };
+
   const addThinkingIndicator = () => {
     const msg = document.createElement("div");
     msg.className = "msg bot thinking";
@@ -966,6 +1000,9 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   const performRequest = async (text, files, thinkingEl) => {
     const filesToSend = files || [];
     const sourceTurn = { text, files: filesToSend };
+    let streamMessage = null;
+    let reply = "";
+    let timeCard = null;
 
     try {
       const res = await fetch("/api/chat", {
@@ -982,34 +1019,72 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
         }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json();
         thinkingEl.remove();
         addErrorMessage(data.error || "Please check your internet connection and try again.", sourceTurn);
         return;
       }
 
-      if (data.time_card) {
-        // Give geolocation + reverse-geocoding up to 4s; if it's not back
-        // by then (slow GPS fix, user still deciding on the permission
-        // prompt, etc.) just render the card with the backend's fallback
-        // location rather than making the user wait on it.
-        const userLocation = await Promise.race([
-          resolveUserLocation(),
-          new Promise((resolve) => setTimeout(() => resolve(null), 4000)),
-        ]);
-        if (userLocation) data.time_card.location = userLocation;
+      if (!res.body) throw new Error("Streaming is not supported by this browser.");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let completed = false;
+
+      const handleEvent = (rawEvent) => {
+        const event = (rawEvent.match(/^event:\s*(.+)$/m) || [])[1];
+        const dataLine = (rawEvent.match(/^data:\s*(.+)$/m) || [])[1];
+        if (!event || !dataLine) return;
+        const data = JSON.parse(dataLine);
+
+        if (event === "meta") {
+          // Keep the animated dots visible until actual model text arrives.
+          timeCard = data;
+        } else if (event === "token") {
+          if (!streamMessage) {
+            thinkingEl.remove();
+            streamMessage = addStreamingMessage(timeCard);
+          }
+          reply += data;
+          renderStreamingMarkdown(streamMessage.bubble, reply);
+          scrollToBottom();
+        } else if (event === "error") {
+          throw new Error(data.error || "Could not generate a response.");
+        } else if (event === "done") {
+          if (!streamMessage) {
+            thinkingEl.remove();
+            streamMessage = addStreamingMessage(timeCard);
+          }
+          finishStreamingMessage(streamMessage, reply, sourceTurn);
+          completed = true;
+        }
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replace(/\r\n/g, "\n");
+
+        let boundary;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          const rawEvent = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          handleEvent(rawEvent);
+        }
+        if (done) break;
       }
 
-      thinkingEl.remove();
-      addMessage("bot", data.reply, null, sourceTurn, data.time_card);
+      if (!completed) throw new Error("The response stream ended unexpectedly.");
     } catch (err) {
       thinkingEl.remove();
-      addErrorMessage("Could not reach EduGenie. Check your internet connection and try again.", sourceTurn);
+      if (streamMessage) streamMessage.msg.remove();
+      addErrorMessage(
+        err.message || "Could not reach EduGenie. Check your internet connection and try again.",
+        sourceTurn,
+      );
     } finally {
       sendBtn.disabled = false;
-      inputEl.focus();
     }
   };
 
@@ -1055,7 +1130,6 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       inputEl.value = "";
       resetInputHeight();
       clearAttachments();
-      inputEl.focus();
     });
   }
 
@@ -1067,6 +1141,4 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     const prompt = chip.dataset.prompt;
     if (prompt) sendMessage(prompt);
   });
-
-  inputEl.focus();
 }

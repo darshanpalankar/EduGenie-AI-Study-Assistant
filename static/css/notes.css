@@ -26,25 +26,42 @@ body.notes-generator-page .ng-shell {
    --------------------------------------------------------------------- */
 
 body.notes-generator-page .ng-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
   text-align: center;
+  padding: 4px 0 2px;
+}
+
+/* A single quiet moment of color behind the header — a soft dual-tone
+   glow anchored to the page's accent + gold tokens, nothing else on the
+   page competes with it. */
+body.notes-generator-page .ng-header-glow {
+  position: absolute;
+  inset: -36px -20px auto -20px;
+  height: 150px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(160px 90px at 28% 30%, var(--accent-soft), transparent 70%),
+    radial-gradient(180px 100px at 74% 55%, var(--gold-soft), transparent 70%);
+  filter: blur(2px);
 }
 
 body.notes-generator-page .ng-header-icon {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 20px;
-  border: 1px solid var(--border);
+  background: linear-gradient(150deg, var(--accent), #5B6BEA);
+  color: #fff;
+  font-size: 21px;
+  box-shadow: 0 6px 16px rgba(61, 79, 219, .28);
 }
 
 body.notes-generator-page .ng-header-text {
@@ -87,7 +104,7 @@ body.notes-generator-page .ng-panel {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 18px;
-  box-shadow: 0 1px 2px rgba(38, 38, 31, .04);
+  box-shadow: 0 2px 10px rgba(38, 38, 31, .05);
 }
 
 body.notes-generator-page .ng-input-panel {
@@ -133,17 +150,10 @@ body.notes-generator-page .ng-field > label i {
   color: var(--accent);
 }
 
-body.notes-generator-page .ng-optional {
-  font-weight: 500;
-  color: var(--ink-dim);
-}
-
-body.notes-generator-page #topicInput,
-body.notes-generator-page #keyPointsInput {
+body.notes-generator-page #topicInput {
   width: 100%;
-  resize: vertical;
-  min-height: 84px;
-  max-height: 220px;
+  resize: none;
+  height: 92px;
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -152,16 +162,34 @@ body.notes-generator-page #keyPointsInput {
   font-family: var(--body-font);
   font-size: 14.5px;
   line-height: 1.5;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-soft) transparent;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-body.notes-generator-page #topicInput::placeholder,
-body.notes-generator-page #keyPointsInput::placeholder {
+body.notes-generator-page #topicInput::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.notes-generator-page #topicInput::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body.notes-generator-page #topicInput::-webkit-scrollbar-thumb {
+  background: var(--gold-soft);
+  border-radius: 8px;
+}
+
+body.notes-generator-page #topicInput::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+body.notes-generator-page #topicInput::placeholder {
   color: var(--ink-dim);
 }
 
-body.notes-generator-page #topicInput:focus,
-body.notes-generator-page #keyPointsInput:focus {
+body.notes-generator-page #topicInput:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
@@ -618,7 +646,7 @@ body.notes-generator-page .ng-notes {
 body.notes-generator-page .ng-notes-topic {
   margin: 0;
   padding-bottom: 14px;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 2px solid var(--gold-soft);
   font-family: var(--display-font);
   font-weight: 700;
   font-size: 22px;
@@ -636,14 +664,42 @@ body.notes-generator-page .ng-note-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
 }
 
 body.notes-generator-page .ng-note-heading {
   margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   font-family: var(--display-font);
   font-weight: 600;
   font-size: 15px;
-  color: var(--accent);
+  color: var(--ink);
+}
+
+body.notes-generator-page .ng-note-heading::before {
+  content: attr(data-index);
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--body-font);
+  font-size: 11px;
+  font-weight: 700;
+  transform: translateY(2px);
+}
+
+body.notes-generator-page .ng-note-section .ng-equation-box {
+  background: var(--panel);
 }
 
 body.notes-generator-page .ng-note-paragraph {

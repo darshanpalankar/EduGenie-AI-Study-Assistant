@@ -444,10 +444,55 @@ html {
     z-index: -1;
 }
 
-.home-page .hero-image img {
+.home-page .hero-robot-slideshow {
     width: 420px;
     animation: homeFloatRobot 4s ease-in-out infinite;
     user-select: none;
+    aspect-ratio: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.home-page .hero-robot-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transform: scale(.96);
+    transition: opacity .7s ease, transform .7s ease;
+    pointer-events: none;
+}
+
+.home-page .hero-robot-slide.is-active {
+    opacity: 1;
+    transform: scale(1);
+    animation: heroRobotBubbleIn .85s cubic-bezier(.22, 1.35, .36, 1) both;
+}
+
+@keyframes heroRobotBubbleIn {
+    0% {
+        opacity: 0;
+        transform: scale(.45);
+        filter: blur(5px);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale(1.09);
+        filter: blur(0);
+    }
+
+    78% {
+        transform: scale(.96);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
 }
 
 .home-page .floating {
@@ -544,9 +589,15 @@ html {
 .home-page .feature-marquee {
     position: relative;
     margin-top: 70px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    scrollbar-width: none;
+}
+
+.home-page .feature-marquee::-webkit-scrollbar {
+    display: none;
 }
 
 .home-page .feature-marquee-track {
@@ -554,29 +605,14 @@ html {
     width: max-content;
     gap: 28px;
     padding: 6px 4px 26px;
-    animation: featureMarqueeScroll 32s linear infinite;
 }
 
 .home-page .feature-marquee-track.is-static {
-    animation: none;
     flex-wrap: wrap;
     width: 100%;
     justify-content: center;
 }
 
-.home-page .feature-marquee-track.is-paused {
-    animation-play-state: paused;
-}
-
-@keyframes featureMarqueeScroll {
-    from {
-        transform: translateX(0);
-    }
-
-    to {
-        transform: translateX(-50%);
-    }
-}
 
 .home-page .feature-card {
     position: relative;
@@ -1608,7 +1644,7 @@ html {
         font-size: 56px;
     }
 
-    .home-page .hero-image img {
+    .home-page .hero-robot-slideshow {
         width: 360px;
     }
 }
@@ -1723,7 +1759,7 @@ html {
         font-size: 16px;
     }
 
-    .home-page .hero-image img {
+    .home-page .hero-robot-slideshow {
         width: 300px;
     }
 
@@ -1736,6 +1772,28 @@ html {
         width: 55px;
         height: 55px;
         font-size: 24px;
+    }
+
+    /* Frame the robot on mobile: two icons around its upper body and two
+       around its lower body. */
+    .home-page .chat {
+        top: 25%;
+        left: -10px;
+    }
+
+    .home-page .code {
+        bottom: 15%;
+        left: -20px;
+    }
+
+    .home-page .note {
+        top: 28%;
+        right: -10px;
+    }
+
+    .home-page .idea {
+        bottom: 12%;
+        right: -20px;
     }
 
     .home-page .hero-stats {
@@ -1802,7 +1860,7 @@ html {
         flex-direction: column;
     }
 
-    .home-page .hero-image img {
+    .home-page .hero-robot-slideshow {
         width: 250px;
     }
 

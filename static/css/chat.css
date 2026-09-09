@@ -1186,7 +1186,7 @@ body.chat-page .error-body {
 
 body.chat-page .error-title {
     font-family: 'Poppins', sans-serif;
-    font-size: 13.5px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--chat-ink);
     margin: 0 0 2px;
@@ -1194,7 +1194,7 @@ body.chat-page .error-title {
 
 body.chat-page .error-desc {
     font-family: 'Poppins', sans-serif;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 450;
     color: var(--chat-ink-soft);
     margin: 0;
@@ -1296,6 +1296,14 @@ body.chat-page .error-retry-btn:hover {
     body.chat-page .composer textarea {
         font-size: 12.5px;
         max-height: min(20vh, 100px);
+    }
+
+    body.chat-page .error-title {
+        font-size: 11px;
+    }
+
+    body.chat-page .error-desc{
+        font-size: 11px;
     }
 }
 

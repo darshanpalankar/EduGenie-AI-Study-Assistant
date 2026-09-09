@@ -153,11 +153,22 @@
 
                 <div class="circle"></div>
 
-                <!-- <img src="{{ url_for('static', filename='images/robot_pose_3crop.png') }}" alt="EduGenie-Robot">   -->
-                <img src="{{ url_for('static', filename='images/robot_pose1.png') }}" alt="EduGenie-Robot">  
-                <!-- <img src="{{ url_for('static', filename='images/robot_pose2.png') }}" alt="EduGenie-Robot">   -->
-                <!-- <img src="{{ url_for('static', filename='images/robot_pose_3crop.png') }}" alt="EduGenie-Robot">   -->
-                <!-- home_robot.png -->
+                <div class="hero-robot-slideshow" aria-live="polite">
+                    <img class="hero-robot-slide is-active"
+                        src="{{ url_for('static', filename='images/home_robot.png') }}" alt="EduGenie_robot">
+                    <img class="hero-robot-slide"
+                        src="{{ url_for('static', filename='images/robot_pose_1.png') }}" alt="">
+                    <img class="hero-robot-slide"
+                        src="{{ url_for('static', filename='images/robot_pose_2.png') }}" alt="">
+                    <img class="hero-robot-slide"
+                        src="{{ url_for('static', filename='images/robot_pose_3.png') }}" alt="">
+                    <img class="hero-robot-slide"
+                        src="{{ url_for('static', filename='images/robot_pose_4.png') }}" alt="">
+                    <img class="hero-robot-slide"
+                        src="{{ url_for('static', filename='images/robot_pose_5.png') }}" alt="">
+                    <img class="hero-robot-slide"
+                        src="{{ url_for('static', filename='images/robot_pose_6.png') }}" alt="">
+                </div>
 
                 <!-- Floating Icons -->
 

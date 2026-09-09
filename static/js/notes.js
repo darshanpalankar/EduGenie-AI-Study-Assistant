@@ -6,9 +6,6 @@
   var topicInput = document.getElementById("topicInput");
   var topicCount = document.getElementById("topicCount");
 
-  var keyPointsInput = document.getElementById("keyPointsInput");
-  var keyPointsCount = document.getElementById("keyPointsCount");
-
   var classLevelSelect = document.getElementById("classLevel");
   var noteStyleSelect = document.getElementById("noteStyle");
 
@@ -34,7 +31,7 @@
   var notesTopic = document.getElementById("notesTopic");
   var notesSections = document.getElementById("notesSections");
 
-  // var outputFooter = document.getElementById("outputFooter");
+  var outputFooter = document.getElementById("outputFooter");
   var statWords = document.getElementById("statWords");
   var statPages = document.getElementById("statPages");
   var statTime = document.getElementById("statTime");
@@ -53,23 +50,16 @@
   // Topic / key points textareas: char counter + auto-grow
   // ---------------------------------------------------------------------
 
-  function autoGrow(el) {
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 220) + "px";
-  }
-
   function wireCounter(textarea, counterEl) {
     textarea.addEventListener("input", function () {
       counterEl.textContent = String(textarea.value.length);
-      autoGrow(textarea);
     });
   }
 
   wireCounter(topicInput, topicCount);
-  wireCounter(keyPointsInput, keyPointsCount);
 
-  // Ctrl+Enter / Cmd+Enter submits from either textarea
-  [topicInput, keyPointsInput].forEach(function (el) {
+  // Ctrl+Enter / Cmd+Enter submits from the topic textarea
+  [topicInput].forEach(function (el) {
     el.addEventListener("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
@@ -110,7 +100,7 @@
     errorState.hidden = name !== "error";
     notesResult.hidden = name !== "notes";
     outputActions.hidden = name !== "notes";
-    // outputFooter.hidden = name !== "notes";
+    outputFooter.hidden = name !== "notes";
 
     if (name !== "notes" && timeUpdateTimer) {
       clearInterval(timeUpdateTimer);
@@ -215,7 +205,8 @@
 
       var heading = document.createElement("h3");
       heading.className = "ng-note-heading";
-      heading.textContent = (index + 1) + ". " + section.heading;
+      heading.setAttribute("data-index", String(index + 1));
+      heading.textContent = section.heading;
       card.appendChild(heading);
 
       groupPoints(section.points).forEach(function (block) {
@@ -257,25 +248,25 @@
     return matches ? matches.length : 0;
   }
 
-  // function formatRelativeTime(from) {
-  //   var seconds = Math.floor((Date.now() - from) / 1000);
-  //   if (seconds < 45) return "Generated just now";
-  //   var minutes = Math.floor(seconds / 60);
-  //   if (minutes < 60) return "Generated " + minutes + "m ago";
-  //   var hours = Math.floor(minutes / 60);
-  //   if (hours < 24) return "Generated " + hours + "h ago";
-  //   var days = Math.floor(hours / 24);
-  //   return "Generated " + days + "d ago";
-  // }
+  function formatRelativeTime(from) {
+    var seconds = Math.floor((Date.now() - from) / 1000);
+    if (seconds < 45) return "Generated just now";
+    var minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return "Generated " + minutes + "m ago";
+    var hours = Math.floor(minutes / 60);
+    if (hours < 24) return "Generated " + hours + "h ago";
+    var days = Math.floor(hours / 24);
+    return "Generated " + days + "d ago";
+  }
 
   function updateStats(raw) {
-    // var words = countWords(raw);
-    // var pages = Math.max(1, Math.ceil(words / WORDS_PER_PAGE));
-    // statWords.textContent = String(words);
-    // statPages.textContent = String(pages);
+    var words = countWords(raw);
+    var pages = Math.max(1, Math.ceil(words / WORDS_PER_PAGE));
+    statWords.textContent = String(words);
+    statPages.textContent = String(pages);
 
-    // generatedAt = Date.now();
-    // statTime.textContent = "Generated just now";
+    generatedAt = Date.now();
+    statTime.textContent = "Generated just now";
 
     if (timeUpdateTimer) clearInterval(timeUpdateTimer);
     timeUpdateTimer = setInterval(function () {
@@ -301,7 +292,7 @@
 
     generate({
       topic: topic,
-      key_points: keyPointsInput.value.trim(),
+      key_points: "",
       class_level: classLevelSelect.value,
       note_style: noteStyleSelect.value,
       pages: parseInt(pagesInput.value, 10) || 1
@@ -351,7 +342,7 @@
     if (lastTopic) {
       generate({
         topic: lastTopic,
-        key_points: keyPointsInput.value.trim(),
+        key_points: "",
         class_level: classLevelSelect.value,
         note_style: noteStyleSelect.value,
         pages: parseInt(pagesInput.value, 10) || 1

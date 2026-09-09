@@ -20,7 +20,7 @@ init(autoreset=True)
 IST = ZoneInfo("Asia/Kolkata")
 APP_LOCATION_LABEL = "Mumbai, Maharashtra, IN"
 
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, Response, jsonify, render_template, request, session, stream_with_context
 
 try:
     from google import genai
@@ -46,6 +46,14 @@ OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com").rstrip("/")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 
+# Fast defaults for interactive chat.  900 leaves enough room to finish a
+# short explanation instead of cutting a reply off mid-sentence.
+AI_CHAT_MAX_OUTPUT_TOKENS = int(os.getenv("AI_CHAT_MAX_OUTPUT_TOKENS", "900"))
+AI_CHAT_HISTORY_TURNS = int(os.getenv("AI_CHAT_HISTORY_TURNS", "8"))
+# Web search is on whenever a Tavily key is configured. Set this to false in
+# the environment only when you explicitly want to disable fresh web results.
+ENABLE_WEB_SEARCH = os.getenv("ENABLE_WEB_SEARCH", "true").strip().lower() in {"1", "true", "yes"}
+
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
 TAVILY_URL = "https://api.tavily.com/search"
 TAVILY_TIMEOUT = float(os.getenv("TAVILY_TIMEOUT", "8"))
@@ -56,6 +64,10 @@ TIME_SENSITIVE_PATTERNS = [
     r"\bwho (won|is|are|was|were)\b",
     r"\bwhat(?:'s| is) the (latest|current|newest)\b",
     r"\b(news|score|scores|result|results|winner|champion|election|price|prices|stock|release date|released)\b",
+    r"\b(?:search|browse) (?:on )?(?:google|the (?:web|internet)|online)\b",
+    r"\b(?:do|run|perform) (?:a )?(?:google|web|online) search\b",
+    r"\b(?:google|web|online) search\b",
+    r"\b(?:look up|lookup|find) .{0,80}\b(?:online|on (?:the )?(?:web|internet))\b",
 ]
 _TIME_SENSITIVE_RE = [re.compile(p, re.IGNORECASE) for p in TIME_SENSITIVE_PATTERNS]
 
@@ -79,7 +91,7 @@ def is_date_time_query(query):
 
 def needs_web_search(query):
     q = (query or "").strip()
-    if not q:
+    if not q or not ENABLE_WEB_SEARCH:
         return False
     return any(pattern.search(q) for pattern in _TIME_SENSITIVE_RE)
 
@@ -256,7 +268,9 @@ AI_CHAT_SYSTEM_INSTRUCTION = (
     "You are EduGenie's AI Chat assistant, a general-purpose study and conversation helper. "
     "You may use markdown formatting such as **bold**, bullet points (-), "
     "and numbered lists to make responses clear and easy to read. "
-    "Keep lists tight with no blank lines between list items. "
+    "Keep lists tight with no blank lines between list items. Every bullet or "
+    "numbered item must begin on its own new line; never put a list marker "
+    "after a sentence on the same line. "
     "If the user asks for code as part of the conversation, you may include "
     "it in a fenced code block along with explanation, since this is a "
     "chat context, not the dedicated Code Generator. "
@@ -378,6 +392,12 @@ def friendly_error_message(e):
             "The configured Ollama model is no longer available on Ollama Cloud. "
             "Please switch to a current model name and try again."
         )
+    if isinstance(e, httpx.HTTPStatusError) and e.response is not None and e.response.status_code == 400:
+        return (
+            "The AI model couldn't process that request - this can happen if "
+            "an attached file isn't supported by the current model. Try "
+            "removing the attachment or switching AI providers."
+        )
     if isinstance(e, ValueError) and "malformed JSON" in error_text:
         return (
             "EduGenie had trouble putting that quiz together, possibly because "
@@ -416,6 +436,23 @@ def get_genai_client():
     return _genai_client
 
 
+def _raise_for_ollama_status(response):
+    """Like response.raise_for_status(), but logs Ollama's actual error
+    body first. A bare raise_for_status() only gives you '400 Bad Request'
+    with no indication of *why* - e.g. an unsupported field like `images`
+    on a text-only model, an unknown model tag, or a malformed payload -
+    which turns every failure into a guessing game."""
+    if response.is_error:
+        try:
+            if not response.is_stream_consumed:
+                response.read()
+            detail = response.json().get("error") or response.text
+        except Exception:
+            detail = "(could not read error body)"
+        logger.error("Ollama API returned %s: %s", response.status_code, detail)
+    response.raise_for_status()
+
+
 def ollama_chat_request(model, messages, response_format=None, max_output_tokens=None):
     payload = {
         "model": model,
@@ -442,14 +479,41 @@ def ollama_chat_request(model, messages, response_format=None, max_output_tokens
         headers=headers,
         timeout=OLLAMA_TIMEOUT,
     )
-    response.raise_for_status()
+    _raise_for_ollama_status(response)
     data = response.json()
     return ((data.get("message") or {}).get("content") or "").strip()
 
 
+def ollama_chat_stream_request(model, messages, max_output_tokens=None):
+    """Yield text chunks from Ollama's newline-delimited streaming response."""
+    payload = {"model": model, "messages": messages, "stream": True}
+    if max_output_tokens:
+        payload["options"] = {"num_predict": max_output_tokens}
+
+    headers = {"Authorization": f"Bearer {OLLAMA_API_KEY}"} if OLLAMA_API_KEY else {}
+    logger.info("Streaming from Ollama host %s with model %s", OLLAMA_HOST, model)
+    with httpx.stream(
+        "POST",
+        f"{OLLAMA_HOST}/api/chat",
+        json=payload,
+        headers=headers,
+        timeout=OLLAMA_TIMEOUT,
+    ) as response:
+        _raise_for_ollama_status(response)
+        for line in response.iter_lines():
+            if not line:
+                continue
+            data = json.loads(line)
+            text = ((data.get("message") or {}).get("content") or "")
+            if text:
+                yield text
+
+
 class _OllamaChatSession:
-    def __init__(self, model, system_instruction=None):
+    def __init__(self, model, system_instruction=None, max_output_tokens=None, history_turns=None):
         self.model = model
+        self.max_output_tokens = max_output_tokens
+        self.history_turns = history_turns
         self.history = []
         if system_instruction:
             self.history.append({"role": "system", "content": system_instruction})
@@ -459,15 +523,44 @@ class _OllamaChatSession:
         if images:
             entry["images"] = images
         self.history.append(entry)
-        content = ollama_chat_request(self.model, self.history)
+        content = ollama_chat_request(
+            self.model,
+            self.history,
+            max_output_tokens=self.max_output_tokens,
+        )
         self.history.append({"role": "assistant", "content": content})
         return SimpleNamespace(text=content)
+
+    def send_message_stream(self, message, images=None):
+        entry = {"role": "user", "content": message}
+        if images:
+            entry["images"] = images
+        self.history.append(entry)
+
+        reply_parts = []
+        for text in ollama_chat_stream_request(
+            self.model,
+            self.history,
+            max_output_tokens=self.max_output_tokens,
+        ):
+            reply_parts.append(text)
+            yield SimpleNamespace(text=text)
+
+        self.history.append({"role": "assistant", "content": "".join(reply_parts)})
+        if self.history_turns:
+            system_messages = self.history[:1] if self.history[0]["role"] == "system" else []
+            self.history = system_messages + self.history[-(self.history_turns * 2):]
 
 
 class _OllamaChats:
     def create(self, model, config=None):
         config = config or {}
-        return _OllamaChatSession(model, config.get("system_instruction"))
+        return _OllamaChatSession(
+            model,
+            config.get("system_instruction"),
+            max_output_tokens=config.get("max_output_tokens"),
+            history_turns=config.get("history_turns"),
+        )
 
 
 class _OllamaModels:
@@ -547,10 +640,14 @@ class AI_Chat:
     - nemotron-3-super
     - gemma4
 
+    NOTE: nemotron-3-super is text-only on Ollama Cloud - it has no vision
+    input, so sending it a message with `images` attached gets rejected by
+    Ollama's API with a 400 Bad Request. gemma4 supports both text and
+    image input, which this chat needs since users can attach photos.
     """
 
     MODEL = "gemini-3.5-flash-lite"
-    OLLAMA_MODEL = "nemotron-3-super"
+    OLLAMA_MODEL = "gemma4"
 
     def __init__(self):
         self.name = "EduGenie - AI Chat"
@@ -574,14 +671,17 @@ class AI_Chat:
             with _ai_chats_lock:
                 if session_id not in _ai_chats_:
                     client = self.get_client()
+                    chat_config = {
+                        "system_instruction": AI_CHAT_SYSTEM_INSTRUCTION,
+                        "max_output_tokens": AI_CHAT_MAX_OUTPUT_TOKENS,
+                    }
+                    if AI_PROVIDER == "ollama":
+                        chat_config["history_turns"] = AI_CHAT_HISTORY_TURNS
                     chat_obj = client.chats.create(
                         model=self.model_name,
-                        config={
-                            "system_instruction": AI_CHAT_SYSTEM_INSTRUCTION,
-                            "max_output_tokens": 3000,
-                        },
+                        config=chat_config,
                     )
-                    _ai_chats_[session_id] = {"client": client, "chat": chat_obj}
+                    _ai_chats_[session_id] = {"client": client, "chat": chat_obj, "turn_count": 0}
 
         return _ai_chats_[session_id]["chat"]
 
@@ -591,7 +691,14 @@ class AI_Chat:
             with _ai_chats_lock:
                 _ai_chats_.pop(session_id, None)
 
-    def send_message(self, message, files=None):
+    def stream_message(self, message, files=None):
+        # Gemini sessions retain all prior turns.  Start a fresh session after
+        # a small number of exchanges so each request stays lightweight.
+        session_id = self._session_key()
+        with _ai_chats_lock:
+            current = _ai_chats_.get(session_id)
+            if current and current.get("turn_count", 0) >= AI_CHAT_HISTORY_TURNS:
+                _ai_chats_.pop(session_id, None)
         chat = self.get_chat()
         files = files or []
 
@@ -653,22 +760,41 @@ class AI_Chat:
                 "\n\nUSER MESSAGE:\n" + outgoing_message
             )
 
+        yield "meta", time_card
+
         if AI_PROVIDER == "ollama":
             images_b64 = [base64.b64encode(f["bytes"]).decode("ascii") for f in image_files]
-            response = call_with_retry(chat.send_message, outgoing_message, images=images_b64 or None)
-            return clean_text(response.text), time_card
-
-        if (image_files or pdf_files) and genai_types is not None:
+            response_stream = chat.send_message_stream(outgoing_message, images=images_b64 or None)
+        elif (image_files or pdf_files) and genai_types is not None:
             parts = [genai_types.Part.from_text(text=outgoing_message)]
             for f in image_files:
                 parts.append(genai_types.Part.from_bytes(data=f["bytes"], mime_type=f["mime_type"]))
             for f in pdf_files:
                 parts.append(genai_types.Part.from_bytes(data=f["bytes"], mime_type=f["mime_type"]))
-            response = call_with_retry(chat.send_message, parts)
+            response_stream = chat.send_message_stream(parts)
         else:
-            response = call_with_retry(chat.send_message, outgoing_message)
+            response_stream = chat.send_message_stream(outgoing_message)
 
-        return clean_text(response.text), time_card
+        for chunk in response_stream:
+            text = getattr(chunk, "text", "") or ""
+            if text:
+                yield "token", text
+
+        with _ai_chats_lock:
+            current = _ai_chats_.get(session_id)
+            if current:
+                current["turn_count"] = current.get("turn_count", 0) + 1
+
+    def send_message(self, message, files=None):
+        """Compatibility helper for callers that still need a complete reply."""
+        reply_parts = []
+        time_card = None
+        for event, payload in self.stream_message(message, files=files):
+            if event == "meta":
+                time_card = payload
+            elif event == "token":
+                reply_parts.append(payload)
+        return clean_text("".join(reply_parts)), time_card
 
 
 class CodeGenerator:
@@ -979,15 +1105,32 @@ def chat():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    try:
-        reply, time_card = ai_chat_generator.send_message(user_message, files=files)
-        response = {"reply": reply}
-        if time_card:
-            response["time_card"] = time_card
-        return jsonify(response)
-    except Exception as e:
-        logger.exception("Error while generating a chat response")
-        return jsonify({"error": friendly_error_message(e)}), 500
+    # Force the ai_chat_session_id into `session` *now*, synchronously,
+    # before the streaming Response is built. Flask writes the
+    # Set-Cookie header while finalizing this view's return value - if
+    # the session id is instead created lazily inside event_stream()
+    # (which only actually runs once stream_with_context's generator is
+    # consumed while the response body is being sent), that write comes
+    # in too late to reach the already-sent headers. The browser never
+    # receives the cookie, so every single message looks like a brand
+    # new session: Gemini gets no prior turns and _ai_chats_ leaks a
+    # fresh entry per request instead of reusing one per user.
+    ai_chat_generator._session_key()
+
+    def event_stream():
+        try:
+            for event, payload in ai_chat_generator.stream_message(user_message, files=files):
+                yield f"event: {event}\ndata: {json.dumps(payload)}\n\n"
+            yield "event: done\ndata: {}\n\n"
+        except Exception as e:
+            logger.exception("Error while streaming a chat response")
+            yield f"event: error\ndata: {json.dumps({'error': friendly_error_message(e)})}\n\n"
+
+    return Response(
+        stream_with_context(event_stream()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.route("/api/generate", methods=["POST"])
@@ -1119,8 +1262,10 @@ if __name__ == "__main__":
     else:
         print(f" {Fore.YELLOW}* AI provider: Gemini")
 
-    if TAVILY_API_KEY:
+    if TAVILY_API_KEY and ENABLE_WEB_SEARCH:
         print(f"{Fore.GREEN} * Web search (AI Chat): enabled via Tavily")
+    elif TAVILY_API_KEY:
+        print(f"{Fore.YELLOW} * Web search (AI Chat): disabled for faster replies")
     else:
         print(f"{Fore.RED} * Web search (AI Chat): disabled (TAVILY_API_KEY not set)")
 

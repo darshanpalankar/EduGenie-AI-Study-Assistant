@@ -11,13 +11,30 @@ if (homeMenuBtn && homeNavbar) {
   });
 }
 
-/* ---------- Features marquee: infinite scroll + pointer-tilt hover ---------- */
-/* The card set is duplicated once so the track can scroll from 0 to -50%
-   and loop seamlessly (CSS keyframes in home.css). Autoplay pauses on
-   hover/focus so people can read a card, and each card still tilts
-   toward the cursor via --tx/--ty custom properties. Under
-   prefers-reduced-motion the track is left static (no clones, no scroll)
-   and just wraps like a normal row. */
+/* ---------- Hero robot slideshow ---------- */
+
+const heroRobotSlides = Array.from(
+  document.querySelectorAll(".home-page .hero-robot-slide")
+);
+
+if (heroRobotSlides.length > 1) {
+  const reduceRobotMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  if (!reduceRobotMotion) {
+    const ROBOT_SLIDE_INTERVAL_MS = 4000;
+    let activeRobotSlide = 0;
+
+    window.setInterval(() => {
+      heroRobotSlides[activeRobotSlide].classList.remove("is-active");
+      activeRobotSlide = (activeRobotSlide + 1) % heroRobotSlides.length;
+      heroRobotSlides[activeRobotSlide].classList.add("is-active");
+    }, ROBOT_SLIDE_INTERVAL_MS);
+  }
+}
+
+/* ---------- Features: auto-scroll marquee + pointer tilt ---------- */
 
 const featureMarqueeEl = document.getElementById("featureMarquee");
 const featureTrackEl = document.getElementById("featureMarqueeTrack");
@@ -54,8 +71,8 @@ if (featureMarqueeEl && featureTrackEl) {
   if (prefersReducedMotionForMarquee) {
     featureTrackEl.classList.add("is-static");
   } else {
-    // Clone the set once so the track is twice as wide as the visible
-    // cards; animating it exactly -50% then loops without a visible seam.
+    // Duplicate the cards for a seamless loop. Scrolling the container (rather
+    // than translating the track) keeps native finger swiping available.
     originalCards.forEach((card) => {
       const clone = card.cloneNode(true);
       clone.setAttribute("aria-hidden", "true");
@@ -64,13 +81,43 @@ if (featureMarqueeEl && featureTrackEl) {
       featureTrackEl.appendChild(clone);
     });
 
-    const pause = () => featureTrackEl.classList.add("is-paused");
-    const resume = () => featureTrackEl.classList.remove("is-paused");
+    const AUTO_SCROLL_SPEED = 0.8;
+    const loopWidth =
+      featureTrackEl.children[originalCards.length].offsetLeft -
+      featureTrackEl.children[0].offsetLeft;
+    let isFeatureScrollPaused = false;
+    let lastFrameTime = null;
+
+    const animateFeatures = (timestamp) => {
+      if (lastFrameTime !== null && !isFeatureScrollPaused) {
+        const elapsed = timestamp - lastFrameTime;
+        featureMarqueeEl.scrollLeft += AUTO_SCROLL_SPEED * (elapsed / 16.67);
+
+        if (featureMarqueeEl.scrollLeft >= loopWidth) {
+          featureMarqueeEl.scrollLeft -= loopWidth;
+        }
+      }
+      lastFrameTime = timestamp;
+      animationFrameId = window.requestAnimationFrame(animateFeatures);
+    };
+
+    const pause = () => {
+      isFeatureScrollPaused = true;
+    };
+    const resume = () => {
+      isFeatureScrollPaused = false;
+      lastFrameTime = null;
+    };
 
     featureMarqueeEl.addEventListener("mouseenter", pause);
     featureMarqueeEl.addEventListener("mouseleave", resume);
     featureMarqueeEl.addEventListener("focusin", pause);
     featureMarqueeEl.addEventListener("focusout", resume);
+    featureMarqueeEl.addEventListener("touchstart", pause, { passive: true });
+    featureMarqueeEl.addEventListener("touchend", resume, { passive: true });
+    featureMarqueeEl.addEventListener("touchcancel", resume, { passive: true });
+
+    window.requestAnimationFrame(animateFeatures);
   }
 }
 

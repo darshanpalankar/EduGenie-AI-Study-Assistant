@@ -25,12 +25,13 @@
 
     <!-- ================= HEADER ================= -->
     <header class="ng-header">
+      <span class="ng-header-glow" aria-hidden="true"></span>
       <div class="ng-header-icon" aria-hidden="true">
         <i class="ri-quill-pen-line"></i>
       </div>
       <div class="ng-header-text">
         <h1>Notes Generator</h1>
-        <p class="ng-subtitle">Generate clear, concise and well-structured notes on any topic in seconds.</p>
+        <p class="ng-subtitle">Turn any topic into clear, well-structured study notes in seconds.</p>
       </div>
     </header>
 
@@ -46,27 +47,13 @@
             <textarea
               id="topicInput"
               name="topic"
-              rows="1"
+              rows="2"
               placeholder="Enter the topic you want notes on..."
               required
               maxlength="300"></textarea>
             <div class="ng-field-meta">
               <span class="ng-hint">Be specific for sharper notes &mdash; add a chapter, unit, or exam name if you have one.</span>
               <span class="ng-counter"><span id="topicCount">0</span>/300</span>
-            </div>
-          </div>
-
-          <div class="ng-field">
-            <label for="keyPointsInput"><i class="ri-list-check-2" aria-hidden="true"></i>Key Points <span class="ng-optional">(Optional)</span></label>
-            <textarea
-              id="keyPointsInput"
-              name="key_points"
-              rows="1"
-              placeholder="Add any related points or keywords..."
-              maxlength="100"></textarea>
-            <div class="ng-field-meta">
-              <span class="ng-hint">List anything specific you want the notes to cover.</span>
-              <span class="ng-counter"><span id="keyPointsCount">0</span>/100</span>
             </div>
           </div>
 
@@ -195,7 +182,7 @@
         </div>
 
         <!-- Stats footer (only visible once notes exist) -->
-        <!-- <div class="ng-output-footer" id="outputFooter" hidden>
+        <div class="ng-output-footer" id="outputFooter" hidden>
           <span class="ng-stat"><strong id="statWords">0</strong>&nbsp;Words</span>
           <span class="ng-stat-sep" aria-hidden="true"></span>
           <span class="ng-stat"><strong id="statPages">0</strong>&nbsp;Pages</span>
@@ -203,7 +190,7 @@
             <span class="ng-live-dot" aria-hidden="true"></span>
             <span id="statTime">Generated just now</span>
           </span>
-        </div> -->
+        </div>
       </section>
 
     </main>
