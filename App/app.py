@@ -649,7 +649,7 @@ class AI_Chat:
     """
 
     MODEL = "gemini-3.5-flash-lite"
-    OLLAMA_MODEL = "nemotron-3-ultra:cloud"
+    OLLAMA_MODEL = "nemotron-3-ultra"
 
     def __init__(self):
         self.name = "EduGenie - AI Chat"
