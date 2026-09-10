@@ -421,7 +421,10 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       return /<html|<body|<div|<span|<script|<style/i.test(source) ? "html" : "xml";
     }
     if (/^\s*[{[]/.test(source) && /":\s*["{\[\d-]/.test(source)) return "json";
-    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|WITH)\b/im.test(source)) return "sql";
+    // `WITH` is SQL only when it begins a common-table expression. A bare
+    // prose line such as "With all my love" must not become an SQL block.
+    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER)\b/im.test(source) ||
+        /^\s*WITH\s+[A-Za-z_][\w$]*\s+AS\s*\(/im.test(source)) return "sql";
     if (/^\s*(def |class |import |from |if __name__ == ['"]__main__['"])/m.test(source)) return "python";
     if (/^\s*(library|require)\s*\(/m.test(source) || /<-\s*/.test(source) || /%>%/.test(source) || /\b(data\.frame|ggplot|mutate|summarise|filter|select|arrange|read\.csv)\s*\(/.test(source)) return "r";
     if (/^\s*(function |const |let |var |export |import )/m.test(source) || /=>/.test(source)) return "javascript";
