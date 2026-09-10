@@ -274,6 +274,8 @@ AI_CHAT_SYSTEM_INSTRUCTION = (
     "If the user asks for code as part of the conversation, you may include "
     "it in a fenced code block along with explanation, since this is a "
     "chat context, not the dedicated Code Generator. "
+    "Never put ordinary prose, letters, poems, or other non-code writing in "
+    "a fenced code block or give it a programming-language label. "
 
     "Match the length of your response to the question. Simple, factual, "
     "or greeting-style questions get a long or short answer - a sentence or two, "

@@ -488,8 +488,25 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     );
   };
 
+  // Models occasionally put ordinary prose (for example, a letter or poem)
+  // inside a fenced block and may even label it as SQL. Treating every fence
+  // as code makes that response hard to read and adds a misleading language
+  // label. Keep genuine code fences intact, but unwrap multi-line prose.
+  const unwrapProseCodeFences = (text) => (text || "").replace(
+    /(^|\n)```[^\n]*\n([\s\S]*?)\n```(?=\n|$)/g,
+    (match, prefix, content) => {
+      const nonEmptyLines = content.split(/\r?\n/).filter((line) => line.trim());
+      const wordCount = (content.match(/[A-Za-z][A-Za-z'-]*/g) || []).length;
+      const hasProseShape = nonEmptyLines.length >= 2 && wordCount >= 8;
+
+      return hasProseShape && !looksLikeCodeResponse(content)
+        ? `${prefix}${content}`
+        : match;
+    }
+  );
+
   const autoFenceCodeBlocks = (text) => {
-    const source = (text || "").trim();
+    const source = unwrapProseCodeFences(text).trim();
     if (!source || /```/.test(source)) return source;
 
     if (looksLikeCodeResponse(source)) {
