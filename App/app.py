@@ -23,13 +23,6 @@ APP_LOCATION_LABEL = "Mumbai, Maharashtra, IN"
 from flask import Flask, Response, jsonify, render_template, request, session, stream_with_context
 
 try:
-    from google import genai
-    from google.genai import types as genai_types
-except ImportError:
-    genai = None
-    genai_types = None
-
-try:
     import pypdf
 except ImportError:
     pypdf = None
@@ -39,9 +32,7 @@ logger = logging.getLogger("edugenie")
 
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("google_genai").setLevel(logging.WARNING)
 
-AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").strip().lower()
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com").rstrip("/")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
@@ -50,13 +41,15 @@ OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 # short explanation instead of cutting a reply off mid-sentence.
 AI_CHAT_MAX_OUTPUT_TOKENS = int(os.getenv("AI_CHAT_MAX_OUTPUT_TOKENS", "900"))
 AI_CHAT_HISTORY_TURNS = int(os.getenv("AI_CHAT_HISTORY_TURNS", "8"))
-# Web search is on whenever a Tavily key is configured. Set this to false in
-# the environment only when you explicitly want to disable fresh web results.
+# Web search is on whenever an OLLAMA_API_KEY is configured (it powers both
+# chat and Ollama's own hosted web search). Set this to false in the
+# environment only when you explicitly want to disable fresh web results.
 ENABLE_WEB_SEARCH = os.getenv("ENABLE_WEB_SEARCH", "true").strip().lower() in {"1", "true", "yes"}
 
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
-TAVILY_URL = "https://api.tavily.com/search"
-TAVILY_TIMEOUT = float(os.getenv("TAVILY_TIMEOUT", "8"))
+# Ollama Cloud's own web search API - reuses OLLAMA_API_KEY, no separate
+# account or key needed. https://docs.ollama.com/capabilities/web-search
+OLLAMA_WEB_SEARCH_URL = f"{OLLAMA_HOST}/api/web_search"
+WEB_SEARCH_TIMEOUT = float(os.getenv("WEB_SEARCH_TIMEOUT", "8"))
 
 TIME_SENSITIVE_PATTERNS = [
     r"\b(latest|current|currently|recent|recently|today|tonight|this week|this month|this year|now|nowadays|up[- ]to[- ]date)\b",
@@ -96,54 +89,51 @@ def needs_web_search(query):
     return any(pattern.search(q) for pattern in _TIME_SENSITIVE_RE)
 
 
-_tavily_disabled_until = 0.0
-_tavily_disabled_lock = threading.Lock()
-TAVILY_COOLDOWN_SECONDS = float(os.getenv("TAVILY_COOLDOWN_SECONDS", str(30 * 60)))
+_web_search_disabled_until = 0.0
+_web_search_disabled_lock = threading.Lock()
+WEB_SEARCH_COOLDOWN_SECONDS = float(os.getenv("WEB_SEARCH_COOLDOWN_SECONDS", str(30 * 60)))
 
 
 def web_search(query, max_results=4):
-    global _tavily_disabled_until
+    """Search the web via Ollama Cloud's hosted web search API, using the
+    same OLLAMA_API_KEY already configured for chat. No separate account
+    or key required. https://docs.ollama.com/capabilities/web-search"""
+    global _web_search_disabled_until
 
-    if not TAVILY_API_KEY:
+    if not OLLAMA_API_KEY:
         return ""
 
-    if time.time() < _tavily_disabled_until:
+    if time.time() < _web_search_disabled_until:
         return ""
 
     try:
         resp = httpx.post(
-            TAVILY_URL,
-            json={
-                "api_key": TAVILY_API_KEY,
-                "query": query,
-                "max_results": max_results,
-                "include_answer": True,
-            },
-            timeout=TAVILY_TIMEOUT,
+            OLLAMA_WEB_SEARCH_URL,
+            json={"query": query, "max_results": max_results},
+            headers={"Authorization": f"Bearer {OLLAMA_API_KEY}"},
+            timeout=WEB_SEARCH_TIMEOUT,
         )
         resp.raise_for_status()
         data = resp.json()
     except httpx.HTTPStatusError as e:
         status = e.response.status_code if e.response is not None else None
         if status and 400 <= status < 500:
-            with _tavily_disabled_lock:
-                _tavily_disabled_until = time.time() + TAVILY_COOLDOWN_SECONDS
+            with _web_search_disabled_lock:
+                _web_search_disabled_until = time.time() + WEB_SEARCH_COOLDOWN_SECONDS
             logger.warning(
-                "Tavily returned %s (likely rate limit or exhausted monthly "
-                "credits). Pausing web search for %.0f minutes; chat will "
-                "keep working without it.",
-                status, TAVILY_COOLDOWN_SECONDS / 60,
+                "Ollama web search returned %s (likely rate limit). "
+                "Pausing web search for %.0f minutes; chat will keep "
+                "working without it.",
+                status, WEB_SEARCH_COOLDOWN_SECONDS / 60,
             )
         else:
-            logger.warning("Tavily web search failed, continuing without it: %s", e)
+            logger.warning("Ollama web search failed, continuing without it: %s", e)
         return ""
     except Exception as e:
-        logger.warning("Tavily web search failed, continuing without it: %s", e)
+        logger.warning("Ollama web search failed, continuing without it: %s", e)
         return ""
 
     parts = []
-    if data.get("answer"):
-        parts.append(f"Quick answer: {data['answer']}")
     for r in data.get("results", []):
         title = r.get("title", "")
         content = (r.get("content") or "")[:300]
@@ -259,7 +249,7 @@ _IDENTITY_INSTRUCTION = (
 
     "Do not make up, infer, or invent any information about the developers. "
 
-    "Do not tell the user that you are Gemini or Google Gemini. "
+    "Do not tell the user which underlying AI model or provider powers you. "
     "You are EduGenie - AI Study Assistant. "
 )
 
@@ -387,7 +377,7 @@ def friendly_error_message(e):
         )
     if "RESOURCE_EXHAUSTED" in error_text or "429" in error_text:
         return "EduGenie is out of wishes for now. Please try again in a minute."
-    if "GENAI_API_KEY" in error_text:
+    if "OLLAMA_API_KEY" in error_text:
         return "EduGenie isn't configured correctly.."
     if isinstance(e, httpx.HTTPStatusError) and e.response is not None and e.response.status_code == 410:
         return (
@@ -415,27 +405,6 @@ def safe_int(value, default, min_value, max_value):
     except (TypeError, ValueError):
         return default
     return max(min_value, min(max_value, value))
-
-
-_genai_client = None
-_genai_client_lock = threading.Lock()
-
-
-def get_genai_client():
-    global _genai_client
-    if _genai_client is None:
-        with _genai_client_lock:
-            if _genai_client is None:
-                if genai is None:
-                    raise RuntimeError(
-                        "google-genai isn't installed. Run `pip install google-genai`, "
-                        "or set AI_PROVIDER=ollama to skip Gemini entirely."
-                    )
-                api_key = os.getenv("GENAI_API_KEY")
-                if not api_key:
-                    raise RuntimeError("GENAI_API_KEY environment variable not set.")
-                _genai_client = genai.Client(api_key=api_key)
-    return _genai_client
 
 
 def _raise_for_ollama_status(response):
@@ -608,9 +577,7 @@ def get_ollama_client():
 
 
 def get_ai_client():
-    if AI_PROVIDER == "ollama":
-        return get_ollama_client()
-    return get_genai_client()
+    return get_ollama_client()
 
 
 def parse_json_response(raw_text):
@@ -624,11 +591,11 @@ def parse_json_response(raw_text):
     except (TypeError, json.JSONDecodeError) as e:
         preview = (raw_text or "")
         logger.error(
-            "Gemini returned invalid/incomplete JSON (%s). Response length: %s chars. "
+            "Ollama returned invalid/incomplete JSON (%s). Response length: %s chars. "
             "Last 300 chars: %r",
             e, len(preview), preview[-300:],
         )
-        raise ValueError("Gemini returned malformed JSON") from e
+        raise ValueError("Ollama returned malformed JSON") from e
 
 
 def estimate_max_output_tokens(num_questions, per_question_tokens=220, base=400):
@@ -648,15 +615,14 @@ class AI_Chat:
     image input, which this chat needs since users can attach photos.
     """
 
-    MODEL = "gemini-3.5-flash-lite"
-    OLLAMA_MODEL = "gemma4"
+    MODEL = "gemma4:cloud"
 
     def __init__(self):
         self.name = "EduGenie - AI Chat"
 
     @property
     def model_name(self):
-        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+        return self.MODEL
 
     def get_client(self):
         return get_ai_client()
@@ -676,9 +642,8 @@ class AI_Chat:
                     chat_config = {
                         "system_instruction": AI_CHAT_SYSTEM_INSTRUCTION,
                         "max_output_tokens": AI_CHAT_MAX_OUTPUT_TOKENS,
+                        "history_turns": AI_CHAT_HISTORY_TURNS,
                     }
-                    if AI_PROVIDER == "ollama":
-                        chat_config["history_turns"] = AI_CHAT_HISTORY_TURNS
                     chat_obj = client.chats.create(
                         model=self.model_name,
                         config=chat_config,
@@ -694,7 +659,7 @@ class AI_Chat:
                 _ai_chats_.pop(session_id, None)
 
     def stream_message(self, message, files=None):
-        # Gemini sessions retain all prior turns.  Start a fresh session after
+        # Sessions retain all prior turns.  Start a fresh session after
         # a small number of exchanges so each request stays lightweight.
         session_id = self._session_key()
         with _ai_chats_lock:
@@ -742,19 +707,18 @@ class AI_Chat:
             for f in text_files
         ]
 
-        if AI_PROVIDER == "ollama":
-            for f in pdf_files:
-                extracted = _extract_pdf_text(f["bytes"])
-                if extracted:
-                    text_blocks.append(
-                        f"--- Attached PDF: {f['name']} (extracted text) ---\n"
-                        f"{extracted}\n--- End of {f['name']} ---"
-                    )
-                else:
-                    text_blocks.append(
-                        f"[Attached PDF '{f['name']}' couldn't be read - "
-                        "no extractable text was found in it.]"
-                    )
+        for f in pdf_files:
+            extracted = _extract_pdf_text(f["bytes"])
+            if extracted:
+                text_blocks.append(
+                    f"--- Attached PDF: {f['name']} (extracted text) ---\n"
+                    f"{extracted}\n--- End of {f['name']} ---"
+                )
+            else:
+                text_blocks.append(
+                    f"[Attached PDF '{f['name']}' couldn't be read - "
+                    "no extractable text was found in it.]"
+                )
 
         if text_blocks:
             outgoing_message = (
@@ -764,18 +728,8 @@ class AI_Chat:
 
         yield "meta", time_card
 
-        if AI_PROVIDER == "ollama":
-            images_b64 = [base64.b64encode(f["bytes"]).decode("ascii") for f in image_files]
-            response_stream = chat.send_message_stream(outgoing_message, images=images_b64 or None)
-        elif (image_files or pdf_files) and genai_types is not None:
-            parts = [genai_types.Part.from_text(text=outgoing_message)]
-            for f in image_files:
-                parts.append(genai_types.Part.from_bytes(data=f["bytes"], mime_type=f["mime_type"]))
-            for f in pdf_files:
-                parts.append(genai_types.Part.from_bytes(data=f["bytes"], mime_type=f["mime_type"]))
-            response_stream = chat.send_message_stream(parts)
-        else:
-            response_stream = chat.send_message_stream(outgoing_message)
+        images_b64 = [base64.b64encode(f["bytes"]).decode("ascii") for f in image_files]
+        response_stream = chat.send_message_stream(outgoing_message, images=images_b64 or None)
 
         for chunk in response_stream:
             text = getattr(chunk, "text", "") or ""
@@ -800,15 +754,14 @@ class AI_Chat:
 
 
 class CodeGenerator:
-    MODEL = "gemini-2.5-flash"
-    OLLAMA_MODEL = "gemma4"
+    MODEL = "gemma4:cloud"
 
     def __init__(self):
         self.name = "EduGenie - Code Generator"
 
     @property
     def model_name(self):
-        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+        return self.MODEL
 
     def get_client(self):
         return get_ai_client()
@@ -846,8 +799,7 @@ class CodeGenerator:
 
 
 class QuizzGenerator:
-    MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gemma4"
+    MODEL = "gemma4:cloud"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Quiz Generator. Given a topic, a difficulty level, "
@@ -863,7 +815,7 @@ class QuizzGenerator:
 
     @property
     def model_name(self):
-        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+        return self.MODEL
 
     def get_client(self):
         return get_ai_client()
@@ -903,8 +855,7 @@ class QuizzGenerator:
 
 
 class NotesGenerator:
-    MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gemma4"
+    MODEL = "gemma4:cloud"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's Notes Generator. Given a topic and a detail level, "
@@ -919,7 +870,7 @@ class NotesGenerator:
 
     @property
     def model_name(self):
-        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+        return self.MODEL
 
     def get_client(self):
         return get_ai_client()
@@ -941,8 +892,7 @@ class NotesGenerator:
 
 
 class MCQsGenerator:
-    MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "gemma4"
+    MODEL = "gemma4:cloud"
 
     SYSTEM_INSTRUCTION = (
         "You are EduGenie's MCQ Generator. Given a topic, a difficulty level, "
@@ -961,7 +911,7 @@ class MCQsGenerator:
 
     @property
     def model_name(self):
-        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+        return self.MODEL
 
     def get_client(self):
         return get_ai_client()
@@ -1002,8 +952,7 @@ class MCQsGenerator:
 
 
 class MathSolver:
-    MODEL = "gemini-3.6-flash"
-    OLLAMA_MODEL = "nemotron-3-super"
+    MODEL = "nemotron-3-super"
 
     SYSTEM_INSTRUCTION = MATH_SOLVER_SYSTEM_INSTRUCTION
 
@@ -1012,7 +961,7 @@ class MathSolver:
 
     @property
     def model_name(self):
-        return self.OLLAMA_MODEL if AI_PROVIDER == "ollama" else self.MODEL
+        return self.MODEL
 
     def get_client(self):
         return get_ai_client()
@@ -1115,7 +1064,7 @@ def chat():
     # consumed while the response body is being sent), that write comes
     # in too late to reach the already-sent headers. The browser never
     # receives the cookie, so every single message looks like a brand
-    # new session: Gemini gets no prior turns and _ai_chats_ leaks a
+    # new session: the chat gets no prior turns and _ai_chats_ leaks a
     # fresh entry per request instead of reusing one per user.
     ai_chat_generator._session_key()
 
@@ -1259,16 +1208,13 @@ if __name__ == "__main__":
     print(f"\n {Fore.YELLOW}* EduGenie{Fore.RESET} running at : {Fore.BLUE}http://127.0.0.1:{port}")
     if lan_ip:
         print(f" {Fore.YELLOW}* View on your phone (same Wi-Fi): {Fore.BLUE}http://{lan_ip}:{port}")
-    if AI_PROVIDER == "ollama":
-        print(f" {Fore.YELLOW}* AI provider: Ollama Cloud ({Fore.BLUE}{OLLAMA_HOST}{Fore.RESET})")
-    else:
-        print(f" {Fore.YELLOW}* AI provider: Gemini")
+    print(f" {Fore.YELLOW}* AI provider: Ollama Cloud ({Fore.BLUE}{OLLAMA_HOST}{Fore.RESET})")
 
-    if TAVILY_API_KEY and ENABLE_WEB_SEARCH:
-        print(f"{Fore.GREEN} * Web search (AI Chat): enabled via Tavily")
-    elif TAVILY_API_KEY:
+    if OLLAMA_API_KEY and ENABLE_WEB_SEARCH:
+        print(f"{Fore.GREEN} * Web search (AI Chat): enabled via Ollama Cloud")
+    elif OLLAMA_API_KEY:
         print(f"{Fore.YELLOW} * Web search (AI Chat): disabled for faster replies")
     else:
-        print(f"{Fore.RED} * Web search (AI Chat): disabled (TAVILY_API_KEY not set)")
+        print(f"{Fore.RED} * Web search (AI Chat): disabled (OLLAMA_API_KEY not set)")
 
     app.run(host="0.0.0.0", port=port, debug=debug, threaded=True)

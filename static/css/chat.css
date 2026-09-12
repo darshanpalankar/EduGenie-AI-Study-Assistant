@@ -571,7 +571,7 @@ body.chat-page .bubble .code-block pre {
 body.chat-page .bubble .code-block code {
     background: none;
     padding: 0;
-    font-weight: 350;
+    font-weight: 250;
     color: #E7E6EE;
     font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
     font-size: 12px;
@@ -717,6 +717,7 @@ body.chat-page .bubble .expand-btn {
 
 .code-side-panel-body code {
     font-family: 'JetBrains Mono', Consolas, Menlo, monospace;
+    font-weight: 250;
     font-size: 14px;
     line-height: 1.75;
     color: #E7E6EE;
