@@ -54,7 +54,7 @@ WEB_SEARCH_TIMEOUT = float(os.getenv("WEB_SEARCH_TIMEOUT", "8"))
 TIME_SENSITIVE_PATTERNS = [
     r"\b(latest|current|currently|recent|recently|today|tonight|this week|this month|this year|now|nowadays|up[- ]to[- ]date)\b",
     r"\b20(2[5-9]|[3-9]\d)\b",
-    r"\bwho (won|is|are|was|were)\b",
+    r"\bwho (?:won|is|are|was|were)(?!\s+(?:you|u|i|we)\b)\b",
     r"\bwhat(?:'s| is) the (latest|current|newest)\b",
     r"\b(news|score|scores|result|results|winner|champion|election|price|prices|stock|release date|released)\b",
     r"\b(?:search|browse) (?:on )?(?:google|the (?:web|internet)|online)\b",
@@ -658,7 +658,7 @@ class AI_Chat:
             with _ai_chats_lock:
                 _ai_chats_.pop(session_id, None)
 
-    def stream_message(self, message, files=None):
+    def stream_message(self, message, files=None, force_search=False):
         # Sessions retain all prior turns.  Start a fresh session after
         # a small number of exchanges so each request stays lightweight.
         session_id = self._session_key()
@@ -671,6 +671,7 @@ class AI_Chat:
 
         outgoing_message = message
         time_card = None
+        searched = False
 
         if is_date_time_query(message):
             now = datetime.now(IST)
@@ -689,12 +690,30 @@ class AI_Chat:
                 "location": APP_LOCATION_LABEL,
                 "tz": "IST",
             }
-        elif needs_web_search(message):
+        elif force_search or needs_web_search(message):
             search_results = web_search(message)
             if search_results:
                 outgoing_message = (
                     "WEB SEARCH RESULTS (fresh, use this to answer accurately):\n"
                     f"{search_results}\n\n"
+                    f"USER QUESTION: {message}"
+                )
+                searched = True
+            elif force_search:
+                # The user explicitly asked for a web search (via the
+                # toggle), but the search call returned nothing - usually a
+                # transient failure or rate limit on Ollama's search API.
+                # Say so explicitly instead of silently answering as if
+                # search was never attempted, which reads as "I can't
+                # browse the web" and looks broken from the user's side.
+                outgoing_message = (
+                    "The user turned on web search for this message, but "
+                    "the live search just now returned no results (it may "
+                    "be temporarily unavailable or rate-limited). Briefly "
+                    "let them know live search didn't return anything this "
+                    "time, then answer as best you can from what you "
+                    "already know, noting the info may not be fully "
+                    "current.\n\n"
                     f"USER QUESTION: {message}"
                 )
 
@@ -726,7 +745,7 @@ class AI_Chat:
                 "\n\nUSER MESSAGE:\n" + outgoing_message
             )
 
-        yield "meta", time_card
+        yield "meta", {"time_card": time_card, "searched": searched}
 
         images_b64 = [base64.b64encode(f["bytes"]).decode("ascii") for f in image_files]
         response_stream = chat.send_message_stream(outgoing_message, images=images_b64 or None)
@@ -741,13 +760,13 @@ class AI_Chat:
             if current:
                 current["turn_count"] = current.get("turn_count", 0) + 1
 
-    def send_message(self, message, files=None):
+    def send_message(self, message, files=None, force_search=False):
         """Compatibility helper for callers that still need a complete reply."""
         reply_parts = []
         time_card = None
-        for event, payload in self.stream_message(message, files=files):
+        for event, payload in self.stream_message(message, files=files, force_search=force_search):
             if event == "meta":
-                time_card = payload
+                time_card = payload.get("time_card")
             elif event == "token":
                 reply_parts.append(payload)
         return clean_text("".join(reply_parts)), time_card
@@ -1047,6 +1066,7 @@ def chat():
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
     raw_files = data.get("files") or []
+    force_search = bool(data.get("web_search"))
 
     if not user_message and not raw_files:
         return jsonify({"error": "Message cannot be empty."}), 400
@@ -1070,7 +1090,7 @@ def chat():
 
     def event_stream():
         try:
-            for event, payload in ai_chat_generator.stream_message(user_message, files=files):
+            for event, payload in ai_chat_generator.stream_message(user_message, files=files, force_search=force_search):
                 yield f"event: {event}\ndata: {json.dumps(payload)}\n\n"
             yield "event: done\ndata: {}\n\n"
         except Exception as e:

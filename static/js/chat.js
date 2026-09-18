@@ -12,6 +12,7 @@ const attachMenu = document.getElementById("attachMenu");
 const attachFilesBtn = document.getElementById("attachFilesBtn");
 const fileInput = document.getElementById("fileInput");
 const attachmentsEl = document.getElementById("attachments");
+const searchToggleBtn = document.getElementById("searchToggleBtn");
 
 if (messagesEl && composerEl && inputEl && sendBtn) {
   if (window.marked) {
@@ -325,6 +326,26 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeAttachMenu();
+    });
+  }
+
+  // ---------- "Search the web" toggle ----------
+  // A standing per-conversation mode, not a per-message flag: once turned
+  // on it stays on (mirrors how the attach button works) until the user
+  // turns it off or starts a new chat. When on, /api/chat always runs a
+  // real web search for that message instead of guessing from wording.
+  let webSearchEnabled = false;
+
+  const setWebSearchEnabled = (enabled) => {
+    webSearchEnabled = enabled;
+    if (!searchToggleBtn) return;
+    searchToggleBtn.classList.toggle("active", enabled);
+    searchToggleBtn.setAttribute("aria-pressed", String(enabled));
+  };
+
+  if (searchToggleBtn) {
+    searchToggleBtn.addEventListener("click", () => {
+      setWebSearchEnabled(!webSearchEnabled);
     });
   }
 
@@ -785,6 +806,21 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     return wrap;
   };
 
+  // Small pill shown above a bot reply that actually used fresh web
+  // search results (see the `searched` flag in /api/chat's meta event).
+  const buildSearchBadge = () => {
+    const badge = document.createElement("div");
+    badge.className = "search-badge";
+    badge.innerHTML = `
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+        <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <span>Searched the web</span>
+    `;
+    return badge;
+  };
+
 
   // `sourceTurn` (the user text + files that produced this reply) is threaded
   // through so "Regenerate" can re-ask the same question.
@@ -911,12 +947,13 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
   // Streaming replies start as plain text, then receive the normal markdown
   // rendering and message actions once the server signals completion.
-  const addStreamingMessage = (timeCard) => {
+  const addStreamingMessage = (timeCard, searched) => {
     const msg = document.createElement("div");
     msg.className = "msg bot";
     msg.appendChild(document.createElement("div")).className = "role-label";
 
     if (timeCard) msg.appendChild(buildTimeCard(timeCard));
+    if (searched) msg.appendChild(buildSearchBadge());
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -1001,7 +1038,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       msg.remove();
       sendBtn.disabled = true;
       const thinkingEl = addThinkingIndicator();
-      performRequest(sourceTurn.text, sourceTurn.files, thinkingEl);
+      performRequest(sourceTurn.text, sourceTurn.files, thinkingEl, sourceTurn.forceSearch);
     });
     card.appendChild(retryBtn);
 
@@ -1017,12 +1054,13 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   // Sends one request to the backend and renders either the reply or a
   // retryable error row. Shared by the composer submit, the error row's
   // "Retry" button, and each bot reply's "Regenerate" button.
-  const performRequest = async (text, files, thinkingEl) => {
+  const performRequest = async (text, files, thinkingEl, forceSearch) => {
     const filesToSend = files || [];
-    const sourceTurn = { text, files: filesToSend };
+    const sourceTurn = { text, files: filesToSend, forceSearch };
     let streamMessage = null;
     let reply = "";
     let timeCard = null;
+    let searchedWeb = false;
 
     try {
       const res = await fetch("/api/chat", {
@@ -1031,6 +1069,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
         body: JSON.stringify({
           message: text,
           markdown: true,
+          web_search: Boolean(forceSearch),
           files: filesToSend.map((f) => ({
             name: f.name,
             mime_type: f.mimeType,
@@ -1061,11 +1100,12 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
         if (event === "meta") {
           // Keep the animated dots visible until actual model text arrives.
-          timeCard = data;
+          timeCard = data.time_card || null;
+          searchedWeb = Boolean(data.searched);
         } else if (event === "token") {
           if (!streamMessage) {
             thinkingEl.remove();
-            streamMessage = addStreamingMessage(timeCard);
+            streamMessage = addStreamingMessage(timeCard, searchedWeb);
           }
           reply += data;
           renderStreamingMarkdown(streamMessage.bubble, reply);
@@ -1075,7 +1115,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
         } else if (event === "done") {
           if (!streamMessage) {
             thinkingEl.remove();
-            streamMessage = addStreamingMessage(timeCard);
+            streamMessage = addStreamingMessage(timeCard, searchedWeb);
           }
           finishStreamingMessage(streamMessage, reply, sourceTurn);
           completed = true;
@@ -1112,14 +1152,19 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     if (greetMsg) greetMsg.style.display = "none";
 
     const filesToSend = files || [];
+    const shouldSearch = webSearchEnabled;
     addMessage("user", text, filesToSend);
     inputEl.value = "";
     resetInputHeight();
     clearAttachments();
+    // One-shot: search applies to this message only, then turns itself
+    // off, so a follow-up like "who are you?" doesn't also trigger a
+    // pointless search just because it was left on from the last message.
+    setWebSearchEnabled(false);
     sendBtn.disabled = true;
 
     const thinkingEl = addThinkingIndicator();
-    await performRequest(text, filesToSend, thinkingEl);
+    await performRequest(text, filesToSend, thinkingEl, shouldSearch);
   };
 
   composerEl.addEventListener("submit", (e) => {
@@ -1150,6 +1195,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       inputEl.value = "";
       resetInputHeight();
       clearAttachments();
+      setWebSearchEnabled(false);
     });
   }
 
