@@ -808,18 +808,18 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
   // Small pill shown above a bot reply that actually used fresh web
   // search results (see the `searched` flag in /api/chat's meta event).
-  // const buildSearchBadge = () => {
-  //   const badge = document.createElement("div");
-  //   badge.className = "search-badge";
-  //   badge.innerHTML = `
-  //     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" xmlns="http://www.w3.org/2000/svg">
-  //       <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
-  //       <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-  //     </svg>
-  //     <span>Searched the web</span>
-  //   `;
-  //   return badge;
-  // };
+  const buildSearchBadge = () => {
+    const badge = document.createElement("div");
+    badge.className = "search-badge";
+    // badge.innerHTML = `
+    //   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" xmlns="http://www.w3.org/2000/svg">
+    //     <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+    //     <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    //   </svg>
+    //   <span>Searched the web</span>
+    // `;
+    return badge;
+  };
 
 
   // `sourceTurn` (the user text + files that produced this reply) is threaded
