@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduGenie - Notes Generator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduGenie - Notes Generator</title>
 
-<!-- Fonts: Fraunces (display) + Inter (body) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="icon" href="{{ url_for('static', filename='images/notes_generator_logo.png') }}" type="image/png">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts: Fraunces (display) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" href="{{ url_for('static', filename='images/notes_generator_logo.png') }}" type="image/png">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
-<!-- Remix Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
+  <!-- Remix Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
 
-<!-- Base tokens (shared across all EduGenie pages) -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-<!-- This page -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/notes.css') }}">
+  <!-- Base tokens (shared across all EduGenie pages) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <!-- This page -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/notes.css') }}">
 </head>
 
 <body class="notes-generator-page">
@@ -45,15 +48,11 @@
 
           <div class="ng-field">
             <label for="topicInput"><i class="ri-checkbox-blank-line" aria-hidden="true"></i>Topic</label>
-            <textarea
-              id="topicInput"
-              name="topic"
-              rows="2"
-              placeholder="Enter the topic you want notes on..."
-              required
+            <textarea id="topicInput" name="topic" rows="2" placeholder="Enter the topic you want notes on..." required
               maxlength="300"></textarea>
             <div class="ng-field-meta">
-              <span class="ng-hint">Be specific for sharper notes &mdash; add a chapter, unit, or exam name if you have one.</span>
+              <span class="ng-hint">Be specific for sharper notes &mdash; add a chapter, unit, or exam name if you have
+                one.</span>
               <span class="ng-counter"><span id="topicCount">0</span>/300</span>
             </div>
           </div>
@@ -200,4 +199,5 @@
   <script src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
 </body>
+
 </html>
