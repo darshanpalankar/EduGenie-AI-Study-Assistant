@@ -16,10 +16,10 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 </head>
 
@@ -36,71 +36,14 @@
 
         <header>
 
-            <div class="logo">
+            <a href="/" class="logo" aria-label="EduGenie home">
 
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" width="40px">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EduGenie logo">
 
-                <div>
+                <span>Edu<span class="blue">Genie</span></span>
 
-                    <h2>EduGenie</h2>
-                    <p>AI Study Assistant</p>
+            </a>
 
-                </div>
-
-            </div>
-
-
-            <nav>
-
-                <a href="#">
-                    <i class="fa-regular fa-file-lines"></i>
-                    Explain
-                </a>
-
-                <a href="/code-generator">
-                    <i class="fa-solid fa-code"></i>
-                    Code
-                </a>
-
-                <a href="#">
-                    <i class="fa-regular fa-note-sticky"></i>
-                    Notes
-                </a>
-
-                <a href="#" class="active">
-                    <i class="fa-solid fa-list-check"></i>
-                    Quiz
-                </a>
-
-                <a href="#">
-                    <i class="fa-regular fa-file-pdf"></i>
-                    PDF Chat
-                </a>
-
-                <a href="#">
-                    <i class="fa-solid fa-table-cells-large"></i>
-                    More
-                </a>
-
-            </nav>
-
-
-
-            <div class="header-icons">
-
-                <button>
-
-                    <i class="fa-regular fa-sun"></i>
-
-                </button>
-
-                <button>
-
-                    <i class="fa-solid fa-user"></i>
-
-                </button>
-
-            </div>
 
         </header>
 
@@ -175,10 +118,7 @@
 
                 </label>
 
-                <input
-                    id="topic-input"
-                    type="text"
-                    placeholder="E.g : Operating System">
+                <input id="topic-input" type="text" placeholder="E.g : Operating System">
 
 
 

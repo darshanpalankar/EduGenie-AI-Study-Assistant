@@ -7,6 +7,7 @@ const composerEl = document.getElementById("composer");
 const inputEl = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 const resetBtn = document.getElementById("resetBtn");
+const themeBtn = document.getElementById("themeBtn");
 const attachBtn = document.getElementById("attachBtn");
 const attachMenu = document.getElementById("attachMenu");
 const attachFilesBtn = document.getElementById("attachFilesBtn");
@@ -15,6 +16,26 @@ const attachmentsEl = document.getElementById("attachments");
 const searchToggleBtn = document.getElementById("searchToggleBtn");
 
 if (messagesEl && composerEl && inputEl && sendBtn) {
+  // Keep the chosen appearance between visits without changing the app's
+  // default light, paper-like study surface for first-time visitors.
+  const applyTheme = (theme) => {
+    const isDark = theme === "dark";
+    document.body.classList.toggle("dark-theme", isDark);
+    if (themeBtn) {
+      themeBtn.setAttribute("aria-pressed", String(isDark));
+      themeBtn.setAttribute("aria-label", isDark ? "Use light theme" : "Use dark theme");
+    }
+  };
+
+  if (themeBtn) {
+    const savedTheme = localStorage.getItem("edugenie-chat-theme");
+    applyTheme(savedTheme === "dark" ? "dark" : "light");
+    themeBtn.addEventListener("click", () => {
+      const nextTheme = document.body.classList.contains("dark-theme") ? "light" : "dark";
+      localStorage.setItem("edugenie-chat-theme", nextTheme);
+      applyTheme(nextTheme);
+    });
+  }
   if (window.marked) {
     marked.setOptions({ breaks: true, gfm: true });
   }

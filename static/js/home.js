@@ -117,6 +117,18 @@ if (featureMarqueeEl && featureTrackEl) {
     featureMarqueeEl.addEventListener("touchend", resume, { passive: true });
     featureMarqueeEl.addEventListener("touchcancel", resume, { passive: true });
 
+  featureMarqueeEl.addEventListener("keydown", (event) => {
+    const scrollAmount = Math.min(320, featureMarqueeEl.clientWidth * 0.8);
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      featureMarqueeEl.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      featureMarqueeEl.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    }
+  });
+
     window.requestAnimationFrame(animateFeatures);
   }
 }

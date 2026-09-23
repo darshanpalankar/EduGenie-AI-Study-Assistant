@@ -971,7 +971,7 @@ class MCQsGenerator:
 
 
 class MathSolver:
-    MODEL = "nemotron-3-super"
+    MODEL = "gemma4:cloud"
 
     SYSTEM_INSTRUCTION = MATH_SOLVER_SYSTEM_INSTRUCTION
 

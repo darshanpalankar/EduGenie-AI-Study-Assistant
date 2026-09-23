@@ -223,13 +223,14 @@
 
             </p>
 
-            <div class="feature-marquee" id="featureMarquee" data-reveal="scale">
+            <div class="feature-marquee" id="featureMarquee" data-reveal="scale" tabindex="0"
+                aria-label="Study tools. Use the Left and Right Arrow keys to browse.">
 
                 <div class="feature-marquee-track" id="featureMarqueeTrack">
 
                     <!-- Card 1: AI Chat -->
 
-                    <a href="/ai-chat" target="_blank" class="feature-card">
+                    <a href="/ai-chat" target="_blank" class="feature-card feature-chat">
 
                         <div class="icon">
 
@@ -246,11 +247,13 @@
 
                         </p>
 
+                        <span class="feature-action">Try AI Chat <span aria-hidden="true">→</span></span>
+
                     </a>
 
                     <!-- Card 2: Code Generator -->
 
-                    <a href="/code-generator" target="_blank" class="feature-card">
+                    <a href="/code-generator" target="_blank" class="feature-card feature-code">
 
                         <div class="icon">
 
@@ -267,11 +270,13 @@
 
                         </p>
 
+                        <span class="feature-action">Try Code Generator <span aria-hidden="true">→</span></span>
+
                     </a>
 
                     <!-- Card 3: Notes Generator -->
 
-                    <a href="/notes-generator" target="_blank" class="feature-card">
+                    <a href="/notes-generator" target="_blank" class="feature-card feature-notes">
 
                         <div class="icon">
 
@@ -288,11 +293,13 @@
 
                         </p>
 
+                        <span class="feature-action">Try Notes Generator <span aria-hidden="true">→</span></span>
+
                     </a>
 
                     <!-- Card 4: Quiz Generator -->
 
-                    <a href="/" target="_blank" class="feature-card">
+                    <a href="/quiz-generator" target="_blank" class="feature-card feature-quiz">
 
                         <div class="icon">
 
@@ -309,11 +316,13 @@
 
                         </p>
 
+                        <span class="feature-action">Try Quiz Generator <span aria-hidden="true">→</span></span>
+
                     </a>
 
                     <!-- Card 5: Maths Solver -->
 
-                    <a href="/math-solver" target="_blank" class="feature-card">
+                    <a href="/math-solver" target="_blank" class="feature-card feature-maths">
 
                         <div class="icon">
 
@@ -329,6 +338,8 @@
                             intelligent explanations anytime.
 
                         </p>
+
+                        <span class="feature-action">Try Maths Solver <span aria-hidden="true">→</span></span>
 
                     </a>
 
@@ -814,7 +825,7 @@
                         <li><a href="/ai-chat" target="_blank">AI Chat</a></li>
                         <li><a href="/code-generator" target="_blank">Code Generator</a></li>
                         <li><a href="/notes-generator" target="_blank">Notes Generator</a></li>
-                        <li><a href="#">Quiz Generator</a></li>
+                        <li><a href="/quiz-generator" target="_blank">Quiz Generator</a></li>
                         <li><a href="/math-solver" target="_blank">Math Solver</a></li>
                     </ul>
 
