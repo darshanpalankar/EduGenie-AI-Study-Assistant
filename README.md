@@ -28,7 +28,7 @@
 
 **EduGenie** is an AI-powered study assistant built to help students understand academic topics, resolve doubts, generate concise study material, and interact with AI through a simple web interface.
 
-The application combines a **Flask backend**, a **HTML/CSS/JavaScript frontend**, and the **Google Gemini API** to provide an interactive learning experience.
+The application combines a **Flask backend**, a **HTML/CSS/JavaScript frontend**, and the **Ollama API** to provide an interactive learning experience.
 
 > **Project goal:** Make AI-assisted studying simple, accessible, and student-friendly.
 
@@ -68,7 +68,7 @@ The frontend is designed using HTML, CSS, and JavaScript with a focus on a clean
 |---|---|
 | Frontend | HTML, CSS, JavaScript |
 | Backend | Python, Flask |
-| AI | Google Gemini API & Ollama API |
+| AI | Ollama API |
 | Development | VS Code |
 | Version Control | Git & GitHub |
 
@@ -151,26 +151,26 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure the Gemini API key
+### 4. Configure the Ollama API key
 
-Create an API key through Google AI Studio and configure it as an environment variable.
+Create an API key through Ollama Website and configure it as an environment variable.
 
 **Windows PowerShell:**
 
 ```powershell
-$env:GENAI_API_KEY="your-api-key-here"
+$env:OLLAMA_API_KEY="your-api-key-here"
 ```
 
 **Windows Command Prompt:**
 
 ```cmd
-set GENAI_API_KEY=your-api-key-here
+set OLLAMA_API_KEY=your-api-key-here
 ```
 
 **macOS / Linux:**
 
 ```bash
-export GENAI_API_KEY="your-api-key-here"
+export OLLAMA_API_KEY="your-api-key-here"
 ```
 
 > **Security:** Never commit your API key, `.env` files containing secrets, or other credentials to GitHub.
@@ -193,7 +193,7 @@ http://127.0.0.1:5000
 
 | Variable | Required | Description |
 |---|---|---|
-| `GENAI_API_KEY` | Yes | API key used to access the Gemini API |
+| `OLLAMA_API_KEY` | Yes | API key used to access the Ollama API |
 | `FLASK_SECRET_KEY` | Optional | Secret key for Flask session/security configuration |
 
 For production use, configure secrets through your hosting platform or environment rather than hard-coding them in source code.
