@@ -243,7 +243,6 @@ EduGenie was developed with the following objectives:
 ## 👨‍💻 Authors
 
 **Darshan Palankar**  
-**Priyesh Kondvilkar**
 
 ---
 
