@@ -27,13 +27,7 @@ body.math-solver-page{
   min-height:100dvh;  /* tracks real visible viewport on mobile (address-bar safe) */
 }
 
-/* Desktop only: pin the page to exactly one viewport height so the
-   workspace flex layout below has a genuine upper bound to shrink
-   against — base.css only sets min-height (by design, so every other
-   page can grow/scroll normally), which on its own doesn't stop a long
-   solution from growing the whole page instead of scrolling internally.
-   Below 900px the layout stacks and is meant to scroll normally, so this
-   doesn't apply there. */
+/* Desktop only: */
 @media (min-width:901px){
   body.math-solver-page{
     height:100vh;
@@ -58,12 +52,7 @@ body.math-solver-page .app-header {
     backdrop-filter: none;
 }
 
-/* ---------------- Show/hide fix ----------------
-   .ms-empty-state and .ms-steps below both set display:flex, which beats
-   the browser's default [hidden]{display:none} rule (author styles always
-   win over the user-agent stylesheet, regardless of source order or
-   specificity). Without this, the empty state kept rendering behind the
-   solved steps even after JS set element.hidden = true. */
+/* ---------------- Show/hide fix ---------------- */
 body.math-solver-page .ms-empty-state[hidden],
 body.math-solver-page .ms-steps[hidden]{
   display:none;
@@ -105,19 +94,7 @@ body.math-solver-page .ms-subtitle{
   max-width:560px;
 }
 
-/* ---------------- Workspace grid ----------------
-   body (base.css) is already display:flex;flex-direction:column with
-   min-height:100dvh. flex:1 here lets the workspace claim all the
-   vertical space left after the hero, instead of sizing to its own
-   content and leaving the rest of the screen empty. max-width scales
-   with the viewport so wide monitors aren't left with huge dead margins.
-
-   Flexbox (not Grid) on purpose: Grid's implicit row auto-sizes to the
-   tallest item's max-content, so a long solution would grow the row (and
-   the whole page) to fit every step instead of respecting the cap below.
-   Flex resolves each item's height straight from the container, so the
-   solution panel can't inflate past it — align-items:stretch does the
-   real work here. */
+/* ---------------- Workspace grid ---------------- */
 body.math-solver-page .ms-workspace{
   width:100%;
   max-width:min(1680px, 94vw);
@@ -213,10 +190,7 @@ body.math-solver-page .ms-chip.is-active{
   color:#fff;
 }
 
-/* ---------------- Input panel shape ----------------
-   Panel sizes to its own content — a fixed height here just produced a
-   half-empty textarea on real screens. The textarea itself gets a taller,
-   fixed comfortable height instead of stretching to fill leftover space. */
+/* ---------------- Input panel shape ---------------- */
 body.math-solver-page .ms-input-panel{
   display:flex;
   flex-direction:column;
@@ -329,13 +303,7 @@ body.math-solver-page .ms-btn-primary.is-loading .ms-btn-spinner{display:inline-
 body.math-solver-page .ms-btn-primary.is-loading .ms-btn-label{display:none;}
 @keyframes ms-spin{to{transform:rotate(360deg);}}
 
-/* ---------------- Solution panel ----------------
-   On desktop the grid row now spans the full remaining viewport height
-   (see .ms-workspace flex:1 above), so the panel fills it exactly via
-   height:100% — no wasted screen space, no arbitrary px/vh guess. Long
-   answers still scroll inside .ms-solution-scroll rather than growing
-   the panel. Below 900px the layout stacks and scrolls normally, so the
-   panel goes back to a comfortable viewport-relative height instead. */
+/* ---------------- Solution panel ---------------- */
 body.math-solver-page .ms-solution-panel{
   height:100%;
   min-height:480px;
