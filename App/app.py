@@ -37,17 +37,10 @@ OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com").rstrip("/")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 
-# Fast defaults for interactive chat.  900 leaves enough room to finish a
-# short explanation instead of cutting a reply off mid-sentence.
 AI_CHAT_MAX_OUTPUT_TOKENS = int(os.getenv("AI_CHAT_MAX_OUTPUT_TOKENS", "900"))
 AI_CHAT_HISTORY_TURNS = int(os.getenv("AI_CHAT_HISTORY_TURNS", "8"))
-# Web search is on whenever an OLLAMA_API_KEY is configured (it powers both
-# chat and Ollama's own hosted web search). Set this to false in the
-# environment only when you explicitly want to disable fresh web results.
 ENABLE_WEB_SEARCH = os.getenv("ENABLE_WEB_SEARCH", "true").strip().lower() in {"1", "true", "yes"}
 
-# Ollama Cloud's own web search API - reuses OLLAMA_API_KEY, no separate
-# account or key needed. https://docs.ollama.com/capabilities/web-search
 OLLAMA_WEB_SEARCH_URL = f"{OLLAMA_HOST}/api/web_search"
 WEB_SEARCH_TIMEOUT = float(os.getenv("WEB_SEARCH_TIMEOUT", "8"))
 
