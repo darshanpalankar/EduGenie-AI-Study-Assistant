@@ -609,10 +609,6 @@ class AI_Chat:
     - nemotron-3-super
     - gemma4
 
-    NOTE: nemotron-3-super is text-only on Ollama Cloud - it has no vision
-    input, so sending it a message with `images` attached gets rejected by
-    Ollama's API with a 400 Bad Request. gemma4 supports both text and
-    image input, which this chat needs since users can attach photos.
     """
 
     MODEL = "gemma4:cloud"
@@ -700,12 +696,6 @@ class AI_Chat:
                 )
                 searched = True
             elif force_search:
-                # The user explicitly asked for a web search (via the
-                # toggle), but the search call returned nothing - usually a
-                # transient failure or rate limit on Ollama's search API.
-                # Say so explicitly instead of silently answering as if
-                # search was never attempted, which reads as "I can't
-                # browse the web" and looks broken from the user's side.
                 outgoing_message = (
                     "The user turned on web search for this message, but "
                     "the live search just now returned no results (it may "
@@ -1076,16 +1066,6 @@ def chat():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    # Force the ai_chat_session_id into `session` *now*, synchronously,
-    # before the streaming Response is built. Flask writes the
-    # Set-Cookie header while finalizing this view's return value - if
-    # the session id is instead created lazily inside event_stream()
-    # (which only actually runs once stream_with_context's generator is
-    # consumed while the response body is being sent), that write comes
-    # in too late to reach the already-sent headers. The browser never
-    # receives the cookie, so every single message looks like a brand
-    # new session: the chat gets no prior turns and _ai_chats_ leaks a
-    # fresh entry per request instead of reusing one per user.
     ai_chat_generator._session_key()
 
     def event_stream():
