@@ -192,6 +192,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
   const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
   const ALLOWED_TEXT_MIME_TYPES = new Set(["text/plain", "text/markdown", "text/csv", "application/json"]);
+  const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   const TEXT_FILE_EXTENSIONS = new Set([
     ".txt", ".md", ".csv", ".json", ".py", ".js", ".jsx", ".ts", ".tsx",
     ".java", ".c", ".cpp", ".h", ".cs", ".go", ".rs", ".rb", ".php",
@@ -209,6 +210,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     const mimeType = (file.type || "").toLowerCase();
     const ext = getExt(file.name || "");
 
+    if (mimeType === DOCX_MIME_TYPE || ext === ".docx") return "docx";
     if (mimeType === "application/pdf" || ext === ".pdf") return "pdf";
     if (ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) return "image";
     if (ALLOWED_TEXT_MIME_TYPES.has(mimeType) || TEXT_FILE_EXTENSIONS.has(ext)) return "text";
@@ -523,6 +525,13 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     if (!trimmed) return false;
     if (/^[-*+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) return false;
     if (/^\|.*\|$/.test(trimmed)) return false;
+
+    // Fractions, limits, and other LaTeX often contain braces and function
+    // calls, which otherwise make a derivation look like source code.
+    const hasDelimitedMath = /\$\$[\s\S]+?\$\$|\$[^$\n]+\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]/.test(trimmed);
+    const hasLatexCommand = /\\(?:frac|sqrt|lim|sin|cos|tan|log|ln|left|right|cdot|times|pm|leq|geq|neq|to|infty|partial|begin|end)\b/.test(trimmed);
+    if (hasDelimitedMath || hasLatexCommand) return false;
+
     if (/^["'][^"']+["']\s*:\s*.+,?$/.test(trimmed)) return true;
     if (/^[a-z-]+\s*:\s*[^:;]+;$/i.test(trimmed)) return true;
     if (/^[A-Za-z_][\w$]*\s*=\s*.+$/.test(trimmed)) return true;

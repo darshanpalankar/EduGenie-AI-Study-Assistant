@@ -9,6 +9,8 @@ import threading
 import time
 import uuid
 import socket
+import zipfile
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from colorama import Fore, Style, init
@@ -150,6 +152,7 @@ MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024
 
 ALLOWED_IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 ALLOWED_TEXT_MIME_TYPES = {"text/plain", "text/markdown", "text/csv", "application/json"}
+DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 TEXT_FILE_EXTENSIONS = {
     ".txt", ".md", ".csv", ".json", ".py", ".js", ".jsx", ".ts", ".tsx",
     ".java", ".c", ".cpp", ".h", ".cs", ".go", ".rs", ".rb", ".php",
@@ -176,10 +179,13 @@ def _decode_uploaded_files(raw_files):
 
         ext = os.path.splitext(name)[1].lower()
 
-        if mime_type == "application/pdf":
+        if mime_type == "application/pdf" or ext == ".pdf":
             kind = "pdf"
         elif mime_type in ALLOWED_IMAGE_MIME_TYPES:
             kind = "image"
+        elif mime_type == DOCX_MIME_TYPE or ext == ".docx":
+            kind = "docx"
+            mime_type = DOCX_MIME_TYPE
         elif mime_type in ALLOWED_TEXT_MIME_TYPES or ext in TEXT_FILE_EXTENSIONS:
             kind = "text"
             mime_type = mime_type if mime_type in ALLOWED_TEXT_MIME_TYPES else "text/plain"
@@ -220,6 +226,42 @@ def _extract_pdf_text(raw_bytes, max_chars=12000):
         return text[:max_chars]
     except Exception:
         logger.warning("Failed to extract text from a PDF attachment", exc_info=True)
+        return ""
+
+
+def _extract_docx_text(raw_bytes, max_chars=12000):
+    """Extract readable paragraph text from a DOCX without unpacking it to disk."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw_bytes)) as docx:
+            document_info = docx.getinfo("word/document.xml")
+            if document_info.file_size > MAX_FILE_SIZE_BYTES:
+                logger.warning("DOCX document.xml is too large to extract safely")
+                return ""
+            document_xml = docx.read(document_info)
+
+        root = ET.fromstring(document_xml)
+        word_ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+        body = root.find(f"{word_ns}body")
+        if body is None:
+            return ""
+
+        paragraphs = []
+        for paragraph in body.iter(f"{word_ns}p"):
+            parts = []
+            for node in paragraph.iter():
+                if node.tag == f"{word_ns}t":
+                    parts.append(node.text or "")
+                elif node.tag == f"{word_ns}tab":
+                    parts.append("\t")
+                elif node.tag in {f"{word_ns}br", f"{word_ns}cr"}:
+                    parts.append("\n")
+            text = "".join(parts).strip()
+            if text:
+                paragraphs.append(text)
+
+        return "\n".join(paragraphs)[:max_chars]
+    except Exception:
+        logger.warning("Failed to extract text from a DOCX attachment", exc_info=True)
         return ""
 
 _IDENTITY_INSTRUCTION = (
@@ -702,6 +744,7 @@ class AI_Chat:
 
         image_files = [f for f in files if f["kind"] == "image"]
         pdf_files = [f for f in files if f["kind"] == "pdf"]
+        docx_files = [f for f in files if f["kind"] == "docx"]
         text_files = [f for f in files if f["kind"] == "text"]
 
         text_blocks = [
@@ -719,6 +762,19 @@ class AI_Chat:
             else:
                 text_blocks.append(
                     f"[Attached PDF '{f['name']}' couldn't be read - "
+                    "no extractable text was found in it.]"
+                )
+
+        for f in docx_files:
+            extracted = _extract_docx_text(f["bytes"])
+            if extracted:
+                text_blocks.append(
+                    f"--- Attached Word document: {f['name']} (extracted text) ---\n"
+                    f"{extracted}\n--- End of {f['name']} ---"
+                )
+            else:
+                text_blocks.append(
+                    f"[Attached Word document '{f['name']}' couldn't be read - "
                     "no extractable text was found in it.]"
                 )
 
