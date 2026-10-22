@@ -12,6 +12,10 @@ if (promptEl && generateBtn && codeBox) {
   const counterEl = document.querySelector(".prompt .counter");
   const languageTagEl = document.querySelector(".language-tag");
   const actionButtons = document.querySelectorAll(".actions button");
+  const fullscreenBtn = document.querySelector(".view-fullscreen-btn");
+  const fullscreenView = document.getElementById("codeFullscreen");
+  const fullscreenContent = fullscreenView?.querySelector(".code-fullscreen-content");
+  const fullscreenCloseBtn = fullscreenView?.querySelector(".code-fullscreen-close");
 
   const LANGUAGE_EXTENSIONS = {
     Python: "py",
@@ -161,6 +165,39 @@ if (promptEl && generateBtn && codeBox) {
   };
 
   generateBtn.addEventListener("click", generateCode);
+
+  if (fullscreenBtn && fullscreenView && fullscreenContent && fullscreenCloseBtn) {
+    let previousBodyOverflow = "";
+
+    const closeFullscreen = () => {
+      fullscreenView.hidden = true;
+      fullscreenContent.replaceChildren();
+      document.body.style.overflow = previousBodyOverflow;
+      fullscreenBtn.focus();
+    };
+
+    fullscreenBtn.addEventListener("click", () => {
+      fullscreenContent.replaceChildren(codeBox.cloneNode(true));
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      fullscreenView.hidden = false;
+      fullscreenCloseBtn.focus();
+    });
+
+    fullscreenCloseBtn.addEventListener("click", closeFullscreen);
+    fullscreenView.addEventListener("click", (event) => {
+      if (event.target === fullscreenView) closeFullscreen();
+    });
+    fullscreenView.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeFullscreen();
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        fullscreenCloseBtn.focus();
+      }
+    });
+  }
 
   actionButtons.forEach((btn) => {
     const label = btn.textContent.trim().toLowerCase();

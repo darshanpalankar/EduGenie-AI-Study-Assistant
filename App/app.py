@@ -41,6 +41,7 @@ OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120"))
 
 AI_CHAT_MAX_OUTPUT_TOKENS = int(os.getenv("AI_CHAT_MAX_OUTPUT_TOKENS", "900"))
 AI_CHAT_HISTORY_TURNS = int(os.getenv("AI_CHAT_HISTORY_TURNS", "8"))
+CODE_GEN_MAX_OUTPUT_TOKENS = int(os.getenv("CODE_GEN_MAX_OUTPUT_TOKENS", "4096"))
 ENABLE_WEB_SEARCH = os.getenv("ENABLE_WEB_SEARCH", "true").strip().lower() in {"1", "true", "yes"}
 
 OLLAMA_WEB_SEARCH_URL = f"{OLLAMA_HOST}/api/web_search"
@@ -838,7 +839,10 @@ class CodeGenerator:
                     client = self.get_client()
                     chat_obj = client.chats.create(
                         model=self.model_name,
-                        config={"system_instruction": CODE_GEN_SYSTEM_INSTRUCTION, "max_output_tokens": 900},
+                        config={
+                            "system_instruction": CODE_GEN_SYSTEM_INSTRUCTION,
+                            "max_output_tokens": CODE_GEN_MAX_OUTPUT_TOKENS,
+                        },
                     )
                     _code_chats_[session_id] = {"client": client, "chat": chat_obj}
 

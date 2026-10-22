@@ -155,6 +155,11 @@
                         <i class="fa-solid fa-rotate-right"></i>
                         Regenerate
                     </button>
+                    <button type="button" class="view-fullscreen-btn" aria-label="View generated code in full screen"
+                        title="View code in full screen">
+                        <i class="fa-solid fa-expand" aria-hidden="true"></i>
+                        Full screen
+                    </button>
                 </div>
             </div>
 
@@ -167,6 +172,19 @@
                     <pre><code></code></pre>
                 </div>
             </div>
+        </div>
+
+        <div class="code-fullscreen" id="codeFullscreen" role="dialog" aria-modal="true"
+            aria-labelledby="codeFullscreenTitle" hidden>
+            <section class="code-fullscreen-panel">
+                <header class="code-fullscreen-header">
+                    <h2 id="codeFullscreenTitle">Generated Code</h2>
+                    <button type="button" class="code-fullscreen-close" aria-label="Close full-screen code">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </header>
+                <div class="code-fullscreen-content"></div>
+            </section>
         </div>
     </div>
 

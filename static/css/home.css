@@ -1689,6 +1689,23 @@ html {
         text-align: center;
     }
 
+    .home-page .footer-contact {
+        width: max-content;
+        max-width: 100%;
+        margin-inline: auto;
+    }
+
+    .home-page .footer-contact li {
+        width: 100%;
+        text-align: left;
+    }
+
+    .home-page .footer-contact li i {
+        width: 20px;
+        flex: 0 0 20px;
+        text-align: center;
+    }
+
     .home-page .footer-brand p {
         max-width: 100%;
         margin-left: auto;
@@ -1770,10 +1787,12 @@ html {
     }
 
     .home-page .about-list {
-        align-items: center;
+        align-items: stretch;
+        width: 100%;
     }
 
     .home-page .about-list li {
+        width: 100%;
         text-align: left;
     }
 
