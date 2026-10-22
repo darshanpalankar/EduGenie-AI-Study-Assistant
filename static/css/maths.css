@@ -421,6 +421,15 @@ body.math-solver-page .ms-step-math{
   font-size:1.02rem;
   color:var(--ms-ink);
 }
+body.math-solver-page .ms-step-math .katex-display,
+body.math-solver-page .ms-answer-value .katex-display{
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  margin:8px 0;
+  padding:4px 2px 8px;
+  -webkit-overflow-scrolling:touch;
+}
 @keyframes ms-step-in{
   to{opacity:1;transform:translateY(0);}
 }
@@ -448,6 +457,7 @@ body.math-solver-page .ms-answer-value{
   font-family:var(--display-font);
   font-size:1.35rem;
   font-weight:600;
+  min-width:0;
 }
 body.math-solver-page .ms-answer-value .katex{color:#2b2109;}
 

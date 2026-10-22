@@ -40,6 +40,41 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     marked.setOptions({ breaks: true, gfm: true });
   }
 
+  // Protect LaTeX's bracket and parenthesis delimiters from Markdown's
+  // backslash-escape rules, then let KaTeX render the resulting text nodes.
+  const renderMarkdown = (text) => {
+    const latexDelimiters = [];
+    const markdown = (text || "").replace(/\\(\(|\)|\[|\])/g, (_, delimiter) => {
+      const token = `EDUGENIELATEXDELIMITER${latexDelimiters.length}TOKEN`;
+      latexDelimiters.push({ token, delimiter: `\\${delimiter}` });
+      return token;
+    });
+    let html = marked.parse(markdown);
+    latexDelimiters.forEach(({ token, delimiter }) => {
+      html = html.replaceAll(token, delimiter);
+    });
+    return DOMPurify.sanitize(html);
+  };
+
+  const renderMath = (bubble) => {
+    if (!window.renderMathInElement) return;
+    try {
+      window.renderMathInElement(bubble, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "\\[", right: "\\]", display: true },
+          { left: "\\(", right: "\\)", display: false },
+          { left: "$", right: "$", display: false },
+        ],
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+        throwOnError: false,
+        strict: "ignore",
+      });
+    } catch (err) {
+      // Keep the original Markdown visible if an unsupported expression fails.
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   };
@@ -948,7 +983,8 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
       if (role === "bot" && window.marked && window.DOMPurify) {
         const preparedText = autoFenceCodeBlocks(text || "");
-        bubble.innerHTML = DOMPurify.sanitize(marked.parse(preparedText));
+        bubble.innerHTML = renderMarkdown(preparedText);
+        renderMath(bubble);
         enhanceBubble(bubble);
       } else {
         bubble.textContent = text;
@@ -987,7 +1023,8 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   const finishStreamingMessage = (streamMessage, text, sourceTurn) => {
     const { msg, bubble } = streamMessage;
     const preparedText = autoFenceCodeBlocks(text || "");
-    bubble.innerHTML = DOMPurify.sanitize(marked.parse(preparedText));
+    bubble.innerHTML = renderMarkdown(preparedText);
+    renderMath(bubble);
     enhanceBubble(bubble);
     msg.appendChild(buildMessageActions(text, sourceTurn));
     scrollToBottom();
@@ -995,7 +1032,8 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
 
   const renderStreamingMarkdown = (bubble, text) => {
     if (window.marked && window.DOMPurify) {
-      bubble.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
+      bubble.innerHTML = renderMarkdown(text || "");
+      renderMath(bubble);
     } else {
       bubble.textContent = text;
     }

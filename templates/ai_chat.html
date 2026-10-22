@@ -14,6 +14,7 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 </head>
 
 <body class="chat-page">
@@ -28,9 +29,18 @@
     </div>
     <div class="header-actions">
       <span class="assistant-status"><span aria-hidden="true"></span>AI tutor ready</span>
-      <button type="button" class="theme-btn" id="themeBtn" aria-label="Use dark theme" aria-pressed="false" title="Toggle colour theme">
-        <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.4 15.1A8.8 8.8 0 0 1 8.9 3.6 8.8 8.8 0 1 0 20.4 15.1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <button type="button" class="theme-btn" id="themeBtn" aria-label="Use dark theme" aria-pressed="false"
+        title="Toggle colour theme">
+        <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8" />
+          <path
+            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20.4 15.1A8.8 8.8 0 0 1 8.9 3.6 8.8 8.8 0 1 0 20.4 15.1Z" stroke="currentColor" stroke-width="1.8"
+            stroke-linejoin="round" />
+        </svg>
       </button>
       <button class="reset-btn" id="resetBtn" title="Start a new conversation">New chat</button>
     </div>
@@ -41,10 +51,6 @@
       <div class="msg bot" id="greetMsg">
         <div class="greet">
           <div class="mark" aria-hidden="true">
-            <!-- <video muted playsinline width="220">
-              <source src="static/images/ai_robot_animated.webm" type="video/webm">
-              Your browser does not support the video tag.
-            </video> -->
             <img src="{{ url_for('static', filename='images/home_robot.png') }}" alt="" class="mark-img">
           </div>
           <p class="eyebrow">YOUR ON-DEMAND STUDY PARTNER</p>
@@ -52,13 +58,16 @@
           <p>Get clear explanations, turn notes into revision material, or test what you know.</p>
           <div class="suggestions" aria-label="Try a starter prompt">
             <button type="button" class="suggestion-chip" data-prompt="Explain API in simple terms">
-              <span class="suggestion-icon" aria-hidden="true">✦</span><span><strong>Explain a concept</strong><small>Make a hard topic simple</small></span>
+              <span class="suggestion-icon" aria-hidden="true">✦</span><span><strong>Explain a
+                  concept</strong><small>Make a hard topic simple</small></span>
             </button>
             <button type="button" class="suggestion-chip" data-prompt="Give me 5 tips to study more effectively">
-              <span class="suggestion-icon" aria-hidden="true">✓</span><span><strong>Plan my study</strong><small>Build better study habits</small></span>
+              <span class="suggestion-icon" aria-hidden="true">✓</span><span><strong>Plan my study</strong><small>Build
+                  better study habits</small></span>
             </button>
             <button type="button" class="suggestion-chip" data-prompt="Quiz me on neural network architecture">
-              <span class="suggestion-icon" aria-hidden="true">?</span><span><strong>Quiz me</strong><small>Check your understanding</small></span>
+              <span class="suggestion-icon" aria-hidden="true">?</span><span><strong>Quiz me</strong><small>Check your
+                  understanding</small></span>
             </button>
           </div>
         </div>
@@ -98,7 +107,8 @@
         </button>
       </div>
     </form>
-    <p class="composer-hint"><span aria-hidden="true">✦</span> EduGenie can make mistakes. Verify important information.</p>
+    <p class="composer-hint"><span aria-hidden="true">✦</span> EduGenie can make mistakes. Verify important information.
+    </p>
   </main>
 
   <!-- marked: renders markdown (bold, bullet points, numbered lists, etc.) to HTML -->
@@ -108,6 +118,9 @@
   <!-- highlight.js: adds syntax colors to fenced code blocks -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- KaTeX renders inline and display LaTeX in assistant replies. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 
   <script src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script src="{{ url_for('static', filename='js/chat.js') }}"></script>

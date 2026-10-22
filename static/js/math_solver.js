@@ -133,7 +133,7 @@
       li.className = 'ms-step';
       li.style.animationDelay = (i * 0.12) + 's';
 
-      const mathHtml = step.math ? safeKatex(step.math) : '';
+      const mathHtml = step.math ? safeKatex(step.math, true) : '';
 
       li.innerHTML =
         '<span class="ms-step-number">' + (i + 1) + '</span>' +
@@ -151,7 +151,7 @@
       answerCard.hidden = false;
       answerCard.style.animationDelay = (result.steps.length * 0.12) + 's';
       answerValue.innerHTML =
-        (result.answer.math ? safeKatex(result.answer.math) : '') +
+        (result.answer.math ? safeKatex(result.answer.math, true) : '') +
         (result.answer.text ? ' <span style="opacity:.85;font-family:var(--body-font);font-size:.85rem;font-weight:400;">' + escapeHtml(result.answer.text) + '</span>' : '');
       lastStepsForCopy.push('Final answer: ' + (result.answer.math || result.answer.text || ''));
     }
@@ -185,12 +185,32 @@
     solveBtn.classList.toggle('is-loading', isLoading);
   }
 
-  function safeKatex(latex) {
+  function safeKatex(latex, displayMode = false) {
+    const expression = unwrapMathDelimiters(latex);
+    if (!expression) return '';
     try {
-      return katex.renderToString(latex, { throwOnError: false, displayMode: false });
+      return katex.renderToString(expression, { throwOnError: false, displayMode });
     } catch (err) {
-      return escapeHtml(latex);
+      return escapeHtml(expression);
     }
+  }
+
+  function unwrapMathDelimiters(latex) {
+    let expression = String(latex || '').trim();
+    const delimiterPairs = [
+      ['$$', '$$'],
+      ['\\[', '\\]'],
+      ['\\(', '\\)'],
+      ['$', '$'],
+    ];
+
+    for (const [opening, closing] of delimiterPairs) {
+      if (expression.startsWith(opening) && expression.endsWith(closing) && expression.length > opening.length + closing.length) {
+        expression = expression.slice(opening.length, -closing.length).trim();
+        break;
+      }
+    }
+    return expression;
   }
 
   function escapeHtml(str) {

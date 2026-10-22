@@ -545,6 +545,25 @@ body.chat-page .bubble a {
     text-decoration: underline;
 }
 
+/* ---------- Mathematical expressions ---------- */
+
+body.chat-page .bubble .katex {
+    font-size: 1.05em;
+}
+
+body.chat-page .bubble .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 12px 0;
+    padding: 4px 2px 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.chat-page .bubble .katex-display > .katex {
+    white-space: nowrap;
+}
+
 /* ---------- Tables ---------- */
 
 body.chat-page .bubble .table-wrap {
