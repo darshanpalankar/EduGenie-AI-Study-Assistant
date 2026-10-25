@@ -83,7 +83,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   // Resolves the user's real city via browser geolocation + a free,
   // no-key reverse-geocoding lookup, so the time card doesn't always show
   // the same fallback location for every user. Lazy: only triggers the
-  // permission prompt the first time a date/time question actually needs
+  // permission prompt when a local date/time card or weather answer needs
   // it, not on page load. Cached in sessionStorage so the prompt only
   // happens once per browser tab.
   //
@@ -133,6 +133,30 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     });
 
     return locationPromise;
+  };
+
+  const isCurrentWeatherQuestion = (text) => {
+    const query = text || "";
+    const hasWeatherWord = /\bweather\b/i.test(query);
+    const isWeatherLesson = /\b(?:explain|define|lesson|learn about|science|climate|systems?|patterns?|formation|causes of)\b/i.test(query);
+    const hasCurrentContext = /\b(?:today|tonight|tomorrow|now|right now|current|currently|forecast|temperature|rain|raining|sunny|cloudy|snow|humidity|wind)\b/i.test(text || "");
+    const asksForWeather = /\b(?:what(?:'s| is)|how(?:'s| is)|will it|is it)\b.{0,40}\b(?:weather|whether|wether)\b|\b(?:weather|whether|wether)\s*[?.!]*\s*$/i.test(text || "");
+    if (hasWeatherWord) return !isWeatherLesson;
+    const whetherWithLocation = /\b(?:whether|wether)\s+(?:of|in|for|near|around)\s+[a-z]/i.test(query);
+    return /\b(?:whether|wether)\b/i.test(query) && (hasCurrentContext || asksForWeather || whetherWithLocation);
+  };
+
+  const hasWeatherLocation = (text) => {
+    const match = (text || "").match(/\b(?:in|of|for|near|around|outside)\s+(?:the\s+)?([a-z][a-z .'-]{1,45}?)(?=\s+(?:today|tonight|tomorrow|now|right now|this week|this month|forecast|weather|temperature)\b|[?.!,]|$)/i);
+    if (!match) return false;
+    const place = match[1].toLowerCase().replace(/\s+/g, " ").trim().replace(/^[ .'-]+|[ .'-]+$/g, "");
+    return !new Set([
+      "my area", "our area", "your area", "the area", "this area",
+      "my location", "our location", "your location", "my city", "here",
+      "there", "me", "us", "today", "tonight", "tomorrow", "now",
+      "this week", "this month", "next week", "the weekend", "weekend",
+      "morning", "afternoon", "evening",
+    ]).has(place);
   };
 
 
@@ -1106,7 +1130,13 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       msg.remove();
       sendBtn.disabled = true;
       const thinkingEl = addThinkingIndicator();
-      performRequest(sourceTurn.text, sourceTurn.files, thinkingEl, sourceTurn.forceSearch);
+      performRequest(
+        sourceTurn.text,
+        sourceTurn.files,
+        thinkingEl,
+        sourceTurn.forceSearch,
+        sourceTurn.weatherLocation,
+      );
     });
     card.appendChild(retryBtn);
 
@@ -1122,9 +1152,9 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   // Sends one request to the backend and renders either the reply or a
   // retryable error row. Shared by the composer submit, the error row's
   // "Retry" button, and each bot reply's "Regenerate" button.
-  const performRequest = async (text, files, thinkingEl, forceSearch) => {
+  const performRequest = async (text, files, thinkingEl, forceSearch, weatherLocation = null) => {
     const filesToSend = files || [];
-    const sourceTurn = { text, files: filesToSend, forceSearch };
+    const sourceTurn = { text, files: filesToSend, forceSearch, weatherLocation };
     let streamMessage = null;
     let reply = "";
     let timeCard = null;
@@ -1138,6 +1168,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
           message: text,
           markdown: true,
           web_search: Boolean(forceSearch),
+          location: weatherLocation,
           files: filesToSend.map((f) => ({
             name: f.name,
             mime_type: f.mimeType,
@@ -1232,7 +1263,11 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     sendBtn.disabled = true;
 
     const thinkingEl = addThinkingIndicator();
-    await performRequest(text, filesToSend, thinkingEl, shouldSearch);
+    let weatherLocation = null;
+    if (isCurrentWeatherQuestion(text) && !hasWeatherLocation(text)) {
+      weatherLocation = await resolveUserLocation();
+    }
+    await performRequest(text, filesToSend, thinkingEl, shouldSearch, weatherLocation);
   };
 
   composerEl.addEventListener("submit", (e) => {
