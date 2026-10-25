@@ -1036,6 +1036,11 @@ body.chat-page .attach-menu-item:hover {
     color: var(--chat-accent);
 }
 
+body.chat-page .attach-menu-item.active {
+    background: var(--chat-accent-soft);
+    color: var(--chat-accent);
+}
+
 body.chat-page .attach-menu-item svg {
     flex-shrink: 0;
 }

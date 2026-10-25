@@ -79,88 +79,6 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   };
 
-  // ---------- Location for the time/date card ----------
-  // Resolves the user's real city via browser geolocation + a free,
-  // no-key reverse-geocoding lookup, so the time card doesn't always show
-  // the same fallback location for every user. Lazy: only triggers the
-  // permission prompt when a local date/time card or weather answer needs
-  // it, not on page load. Cached in sessionStorage so the prompt only
-  // happens once per browser tab.
-  //
-  // NOTE: navigator.geolocation is blocked by browsers on any non-HTTPS
-  // origin except localhost/127.0.0.1. On LAN HTTP testing
-  // (http://10.x.x.x:5000) this will silently resolve to null and the
-  // card will just show the backend's static fallback location instead -
-  // that's expected until this is served over HTTPS.
-  const LOCATION_CACHE_KEY = "edugenie_location_label";
-  let locationPromise = null;
-
-  const resolveUserLocation = () => {
-    if (locationPromise) return locationPromise;
-
-    const cached = sessionStorage.getItem(LOCATION_CACHE_KEY);
-    if (cached) {
-      locationPromise = Promise.resolve(cached);
-      return locationPromise;
-    }
-
-    if (!("geolocation" in navigator)) {
-      locationPromise = Promise.resolve(null);
-      return locationPromise;
-    }
-
-    locationPromise = new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const { latitude, longitude } = pos.coords;
-            const res = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-            );
-            const geo = await res.json();
-            const label = [geo.city || geo.locality, geo.principalSubdivision, geo.countryCode]
-              .filter(Boolean)
-              .join(", ");
-            if (label) sessionStorage.setItem(LOCATION_CACHE_KEY, label);
-            resolve(label || null);
-          } catch {
-            resolve(null);
-          }
-        },
-        () => resolve(null), // permission denied, timeout, or other geolocation error
-        { timeout: 5000, maximumAge: 10 * 60 * 1000 }
-      );
-    });
-
-    return locationPromise;
-  };
-
-  const isCurrentWeatherQuestion = (text) => {
-    const query = text || "";
-    const hasWeatherWord = /\bweather\b/i.test(query);
-    const isWeatherLesson = /\b(?:explain|define|lesson|learn about|science|climate|systems?|patterns?|formation|causes of)\b/i.test(query);
-    const hasCurrentContext = /\b(?:today|tonight|tomorrow|now|right now|current|currently|forecast|temperature|rain|raining|sunny|cloudy|snow|humidity|wind)\b/i.test(text || "");
-    const asksForWeather = /\b(?:what(?:'s| is)|how(?:'s| is)|will it|is it)\b.{0,40}\b(?:weather|whether|wether)\b|\b(?:weather|whether|wether)\s*[?.!]*\s*$/i.test(text || "");
-    if (hasWeatherWord) return !isWeatherLesson;
-    const whetherWithLocation = /\b(?:whether|wether)\s+(?:of|in|for|near|around)\s+[a-z]/i.test(query);
-    return /\b(?:whether|wether)\b/i.test(query) && (hasCurrentContext || asksForWeather || whetherWithLocation);
-  };
-
-  const hasWeatherLocation = (text) => {
-    const match = (text || "").match(/\b(?:in|of|for|near|around|outside)\s+(?:the\s+)?([a-z][a-z .'-]{1,45}?)(?=\s+(?:today|tonight|tomorrow|now|right now|this week|this month|forecast|weather|temperature)\b|[?.!,]|$)/i);
-    if (!match) return false;
-    const place = match[1].toLowerCase().replace(/\s+/g, " ").trim().replace(/^[ .'-]+|[ .'-]+$/g, "");
-    return !new Set([
-      "my area", "our area", "your area", "the area", "this area",
-      "my location", "our location", "your location", "my city", "here",
-      "there", "me", "us", "today", "tonight", "tomorrow", "now",
-      "this week", "this month", "next week", "the weekend", "weekend",
-      "morning", "afternoon", "evening",
-    ]).has(place);
-  };
-
-
-
   // ---------- Auto-growing composer textarea ----------
   // Reads the max-height from CSS so it can be tuned per breakpoint there
   // instead of being locked to a single value in JS.
@@ -412,22 +330,22 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   }
 
   // ---------- "Search the web" toggle ----------
-  // A standing per-conversation mode, not a per-message flag: once turned
-  // on it stays on (mirrors how the attach button works) until the user
-  // turns it off or starts a new chat. When on, /api/chat always runs a
-  // real web search for that message instead of guessing from wording.
-  let webSearchEnabled = false;
+  // Web search starts enabled for each chat and stays enabled until toggled off.
+  let webSearchEnabled = true;
 
   const setWebSearchEnabled = (enabled) => {
     webSearchEnabled = enabled;
     if (!searchToggleBtn) return;
     searchToggleBtn.classList.toggle("active", enabled);
-    searchToggleBtn.setAttribute("aria-pressed", String(enabled));
+    searchToggleBtn.setAttribute("aria-checked", String(enabled));
   };
+
+  setWebSearchEnabled(webSearchEnabled);
 
   if (searchToggleBtn) {
     searchToggleBtn.addEventListener("click", () => {
       setWebSearchEnabled(!webSearchEnabled);
+      closeAttachMenu();
     });
   }
 
@@ -1135,7 +1053,6 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
         sourceTurn.files,
         thinkingEl,
         sourceTurn.forceSearch,
-        sourceTurn.weatherLocation,
       );
     });
     card.appendChild(retryBtn);
@@ -1152,9 +1069,9 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
   // Sends one request to the backend and renders either the reply or a
   // retryable error row. Shared by the composer submit, the error row's
   // "Retry" button, and each bot reply's "Regenerate" button.
-  const performRequest = async (text, files, thinkingEl, forceSearch, weatherLocation = null) => {
+  const performRequest = async (text, files, thinkingEl, forceSearch) => {
     const filesToSend = files || [];
-    const sourceTurn = { text, files: filesToSend, forceSearch, weatherLocation };
+    const sourceTurn = { text, files: filesToSend, forceSearch };
     let streamMessage = null;
     let reply = "";
     let timeCard = null;
@@ -1168,7 +1085,6 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
           message: text,
           markdown: true,
           web_search: Boolean(forceSearch),
-          location: weatherLocation,
           files: filesToSend.map((f) => ({
             name: f.name,
             mime_type: f.mimeType,
@@ -1256,18 +1172,10 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
     inputEl.value = "";
     resetInputHeight();
     clearAttachments();
-    // One-shot: search applies to this message only, then turns itself
-    // off, so a follow-up like "who are you?" doesn't also trigger a
-    // pointless search just because it was left on from the last message.
-    setWebSearchEnabled(false);
     sendBtn.disabled = true;
 
     const thinkingEl = addThinkingIndicator();
-    let weatherLocation = null;
-    if (isCurrentWeatherQuestion(text) && !hasWeatherLocation(text)) {
-      weatherLocation = await resolveUserLocation();
-    }
-    await performRequest(text, filesToSend, thinkingEl, shouldSearch, weatherLocation);
+    await performRequest(text, filesToSend, thinkingEl, shouldSearch);
   };
 
   composerEl.addEventListener("submit", (e) => {
@@ -1298,7 +1206,7 @@ if (messagesEl && composerEl && inputEl && sendBtn) {
       inputEl.value = "";
       resetInputHeight();
       clearAttachments();
-      setWebSearchEnabled(false);
+      setWebSearchEnabled(true);
     });
   }
 

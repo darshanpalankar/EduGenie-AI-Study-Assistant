@@ -106,7 +106,7 @@
   }
 
   /* ---------- backend hook ----------
-     Mirrors the existing /api/chat, /api/quiz, /api/mcqs pattern.
+     Mirrors the existing /api/chat and /api/quiz pattern.
      Expected JSON shape from a MathSolver class + /api/math-solve route:
      { steps: [{ title, body, math }], answer: { text, math } }
   */

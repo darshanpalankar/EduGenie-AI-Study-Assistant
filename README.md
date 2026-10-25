@@ -118,7 +118,7 @@ EduGenie - AI Study Assistant/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/darshanpalkar/EduGenie-AI-Study-Assistant.git
+git clone https://github.com/darshanpalankar/EduGenie-AI-Study-Assistant.git
 cd EduGenie-AI-Study-Assistant
 ```
 

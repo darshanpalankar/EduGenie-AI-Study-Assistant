@@ -228,7 +228,7 @@ if (
     quizGenerateBtn.innerHTML = "Generating...";
 
     try {
-      const res = await fetch("/api/mcqs", {
+      const res = await fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
