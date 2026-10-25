@@ -211,7 +211,6 @@ git commit -m "Your commit message"
 git push origin main
 ```
 
-Before committing, make sure sensitive credentials and local environment files are excluded from the repository.
 
 ---
 
